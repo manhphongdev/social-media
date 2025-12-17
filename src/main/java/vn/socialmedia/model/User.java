@@ -21,44 +21,7 @@ import java.util.Set;
 @AllArgsConstructor
 @Entity
 @Table(name = "users")
-public class User extends AbstractEntity implements UserDetails, Serializable {
-    @Override
-    public Collection<? extends GrantedAuthority> getAuthorities() {
-
-        //get Role
-        List<Role> roleList = roles.stream().toList();
-
-        //get role name
-        List<String> roleNames = roleList.stream().map(role -> role.getName()).toList();
-
-        //add role name to authority
-        return roleNames.stream().map(roleName -> new SimpleGrantedAuthority(roleName)).toList();
-    }
-
-    @Override
-    public String getUsername() {
-        return email;
-    }
-
-    @Override
-    public boolean isAccountNonExpired() {
-        return UserDetails.super.isAccountNonExpired();
-    }
-
-    @Override
-    public boolean isAccountNonLocked() {
-        return UserDetails.super.isAccountNonLocked();
-    }
-
-    @Override
-    public boolean isCredentialsNonExpired() {
-        return UserDetails.super.isCredentialsNonExpired();
-    }
-
-    @Override
-    public boolean isEnabled() {
-        return UserStatus.ACTIVE.equals(status);
-    }
+public class User extends AbstractEntity {
 
     @Column(columnDefinition = "VARCHAR(255)", nullable = false, unique = true)
     private String email;

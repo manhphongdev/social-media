@@ -74,10 +74,10 @@ logging:
     web: INFO
 
 jwt:
-  key_access_token: "8mhZcWZVPhDeucdGaUQhUQoSkda3yjAtkBPJNP/4dvQy"
-  key_refresh_token: "Gu4jjMNk9oBnertRHqfRZJdHnz5jihbbnjAHeWNQbpg9"
-  access_token_expiration: 3600000
-  expiration-refresh-token: 2592000000
+  key_access: "8mhZcWZVPhDeucdGaUQhUQoSkda3yjAtkBPJNP/4dvQy"
+  key_refresh: "Gu4jjMNk9oBnertRHqfRZJdHnz5jihbbnjAHeWNQbpg9"
+  access_expiration: 3600000
+  refresh_expiration: 2592000000
 
 admin:
   email_default: "admin@test.com"
