@@ -10,9 +10,9 @@ spring:
     date-format: yyyy-MM-dd HH:mm:ss
 
   datasource:
-    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:social_network}?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Ho_Chi_Minh
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:social_media}?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Ho_Chi_Minh
     username: ${DB_USER:root}
-    password: ${DB_PASS:}
+    password: ${DB_PASS:123456}
     driver-class-name: com.mysql.cj.jdbc.Driver
 
   jpa:
@@ -58,9 +58,6 @@ spring:
   devtools:
     add-properties: true
 
-  sendgrid:
-    api-key: ${SENDGRID_API_KEY}
-    from-email: "manhphongg6572@gmail.com"
 
 management:
   endpoints:
@@ -74,18 +71,11 @@ logging:
     web: INFO
 
 jwt:
-  key_access: "8mhZcWZVPhDeucdGaUQhUQoSkda3yjAtkBPJNP/4dvQy"
-  key_refresh: "Gu4jjMNk9oBnertRHqfRZJdHnz5jihbbnjAHeWNQbpg9"
-  access_expiration: 3600000
-  refresh_expiration: 2592000000
+  access-token-secret: "8mhZcWZVPhDeucdGaUQhUQoSkda3yjAtkBPJNP/4dvQy"
+  refresh-token-secret: "Gu4jjMNk9oBnertRHqfRZJdHnz5jihbbnjAHeWNQbpg9"
+  access-token-expiration: 3600000
+  refresh-token-expiration: 604800000
 
-admin:
-  email_default: "admin@test.com"
-  password_default: "12345678"
-
-user-account-test:
-  email: "user@test.com"
-  password: "12345678"
 
 aws:
   access-key: ${AWS_ACCESS_KEY}

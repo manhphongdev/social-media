@@ -1,4 +1,4 @@
-package vn.socialmedia.sevice;
+package vn.socialmedia.auth.sevice;
 
 import io.jsonwebtoken.Claims;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -14,7 +14,7 @@ public interface JwtService {
 
     String generateRefreshToken(UserDetails userDetails);
 
-    boolean isTokenValid(String token, TokenType tokenType);
+    boolean isTokenValid(String token, TokenType tokenType, UserDetails userDetails);
 
     <T> T extractClaim(String token, Function<Claims, T> claimsResolver, TokenType tokenType);
 }
