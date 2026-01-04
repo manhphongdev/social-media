@@ -2,15 +2,11 @@ package vn.socialmedia.model;
 
 import jakarta.persistence.*;
 import lombok.*;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.UserDetails;
 import vn.socialmedia.enums.Gender;
 import vn.socialmedia.enums.UserStatus;
 
 import java.io.Serializable;
 import java.time.LocalDate;
-import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
@@ -21,7 +17,7 @@ import java.util.Set;
 @AllArgsConstructor
 @Entity
 @Table(name = "users")
-public class User extends AbstractEntity {
+public class User extends AbstractEntity implements Serializable {
 
     @Column(columnDefinition = "VARCHAR(255)", nullable = false, unique = true)
     private String email;

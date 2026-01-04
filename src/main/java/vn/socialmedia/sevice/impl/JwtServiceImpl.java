@@ -1,4 +1,4 @@
-package vn.socialmedia.auth.sevice.impl;
+package vn.socialmedia.sevice.impl;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
@@ -11,18 +11,17 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
-import vn.socialmedia.auth.sevice.JwtService;
 import vn.socialmedia.enums.TokenType;
 import vn.socialmedia.exception.InvalidTokenException;
 import vn.socialmedia.exception.TokenExpiredException;
+import vn.socialmedia.repository.RefreshTokenRepository;
+import vn.socialmedia.repository.UserRepository;
 import vn.socialmedia.security.config.JwtProperties;
+import vn.socialmedia.sevice.JwtService;
 
 import javax.crypto.SecretKey;
 import java.time.Instant;
-import java.util.Base64;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Function;
 
 @Service
@@ -31,6 +30,8 @@ import java.util.function.Function;
 public class JwtServiceImpl implements JwtService {
 
     private final JwtProperties jwtProperties;
+    private final UserRepository userRepository;
+    private final RefreshTokenRepository refreshTokenRepository;
 
     private SecretKey accessTokenKey;
     private SecretKey refreshTokenKey;
@@ -54,7 +55,6 @@ public class JwtServiceImpl implements JwtService {
     public String generateAccessToken(UserDetails userDetails) {
         log.debug("generateAccessToken email : {}", userDetails.getUsername());
         Map<String, Object> claims = new HashMap<>();
-        claims.put("token_type", TokenType.ACCESS_TOKEN);
         return generateToken(userDetails, claims, TokenType.ACCESS_TOKEN);
     }
 
@@ -62,25 +62,29 @@ public class JwtServiceImpl implements JwtService {
     public String generateRefreshToken(UserDetails userDetails) {
         log.debug("generateRefreshToken email : {}", userDetails.getUsername());
         Map<String, Object> claims = new HashMap<>();
-        claims.put("token_type", TokenType.REFRESH_TOKEN);
+
         return generateToken(userDetails, claims, TokenType.REFRESH_TOKEN);
     }
 
     @Override
-    public boolean isTokenValid(String token, TokenType tokenType, UserDetails userDetails) {
+    public boolean isTokenValid(String token, TokenType tokenType) {
 
         return extractExpiration(token, tokenType).after(Date.from(Instant.now()))
-                && userDetails.getUsername().equals(extractUsername(token, tokenType))
                 && jwtProperties.getIssuer().equals(extractClaim(token, Claims::getIssuer, tokenType));
     }
 
     @Override
-    public <T> T extractClaim(String token, Function<Claims, T> claimsResolver, TokenType tokenType) {
+    public String extractId(String token, TokenType tokenType) {
+        return extractClaim(token, Claims::getId, tokenType);
+    }
+
+    private <T> T extractClaim(String token, Function<Claims, T> claimsResolver, TokenType tokenType) {
         final Claims claims = getClaimsFromToken(token, tokenType);
         return claimsResolver.apply(claims);
     }
 
-    private Date extractExpiration(String token, TokenType tokenType) {
+    @Override
+    public Date extractExpiration(String token, TokenType tokenType) {
         return extractClaim(token, Claims::getExpiration, tokenType);
     }
 
@@ -121,6 +125,7 @@ public class JwtServiceImpl implements JwtService {
                     .claims(claims)
                     .subject(userDetails.getUsername())
                     .issuer(jwtProperties.getIssuer())
+                    .id(UUID.randomUUID().toString())
                     .issuedAt(Date.from(Instant.now()))
                     .expiration(Date.from(Instant.now().plusMillis(jwtProperties.getRefreshTokenExpiration())))
                     .signWith(refreshTokenKey, Jwts.SIG.HS256)
@@ -130,6 +135,7 @@ public class JwtServiceImpl implements JwtService {
                     .and()
                     .claims(claims)
                     .subject(userDetails.getUsername())
+                    .id(UUID.randomUUID().toString())
                     .issuer(jwtProperties.getIssuer())
                     .issuedAt(Date.from(Instant.now()))
                     .expiration(Date.from(Instant.now().plusMillis(jwtProperties.getAccessTokenExpiration())))

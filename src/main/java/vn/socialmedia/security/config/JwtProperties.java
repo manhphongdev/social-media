@@ -28,5 +28,11 @@ public class JwtProperties {
     private long refreshTokenExpiration;
 
     @NotBlank
-    private String issuer = "social-media";
+    private String issuer = "social-media.com";
+
+    private String refreshTokenCookieName = "refreshToken";
+    private boolean cookieHttpOnly = true;
+    private boolean cookieSecure = true;
+    private String cookiePath = "/";
+    private String cookieDomain = "";
 }

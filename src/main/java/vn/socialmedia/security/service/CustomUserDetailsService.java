@@ -5,8 +5,8 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
-import vn.socialmedia.auth.repository.UserRepository;
 import vn.socialmedia.model.User;
+import vn.socialmedia.repository.UserRepository;
 import vn.socialmedia.security.user.UserSecurity;
 
 @Service

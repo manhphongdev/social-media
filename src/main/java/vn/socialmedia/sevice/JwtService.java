@@ -1,10 +1,9 @@
-package vn.socialmedia.auth.sevice;
+package vn.socialmedia.sevice;
 
-import io.jsonwebtoken.Claims;
 import org.springframework.security.core.userdetails.UserDetails;
 import vn.socialmedia.enums.TokenType;
 
-import java.util.function.Function;
+import java.util.Date;
 
 public interface JwtService {
 
@@ -14,7 +13,10 @@ public interface JwtService {
 
     String generateRefreshToken(UserDetails userDetails);
 
-    boolean isTokenValid(String token, TokenType tokenType, UserDetails userDetails);
+    boolean isTokenValid(String token, TokenType tokenType);
 
-    <T> T extractClaim(String token, Function<Claims, T> claimsResolver, TokenType tokenType);
+    String extractId(String token, TokenType tokenType);
+
+    Date extractExpiration(String token, TokenType tokenType);
+
 }

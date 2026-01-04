@@ -4,19 +4,21 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import vn.socialmedia.dto.response.ErrorResponse;
 import vn.socialmedia.enums.ErrorCode;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeParseException;
 import java.util.Arrays;
 import java.util.List;
 
 @RestControllerAdvice
 @Slf4j
 public class GlobalExceptionHandler {
-
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleValidationException(
@@ -45,7 +47,14 @@ public class GlobalExceptionHandler {
                         maskSensitiveValue(error.getField(), error.getRejectedValue()))
         );
 
-        ErrorResponse response = ErrorResponse.of(ErrorCode.VALIDATION_ERROR, "Validation Failed", fieldErrors);
+        ErrorResponse response = ErrorResponse
+                .builder()
+                .code(ErrorCode.VALIDATION_ERROR.getCode())
+                .message(ErrorCode.VALIDATION_ERROR.getMessage())
+                .fieldErrors(fieldErrors)
+                .path(request.getRequestURI())
+                .timestamp(LocalDateTime.now())
+                .build();
         response.setPath(request.getRequestURI());
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
@@ -76,11 +85,31 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleBusinessException(
             BusinessException ex,
             HttpServletRequest request) {
+        log.error("BusinessException for request: code={}, path={}, message={}", ex.getErrorCode().getCode(), request.getRequestURI(), ex.getMessage());
 
-        ErrorResponse response = ErrorResponse.of(ex.getCode(), ex.getMessage());
-        response.setPath(request.getRequestURI());
+        ErrorResponse response = new ErrorResponse(ex.getErrorCode().getCode(), ex.getMessage(), request.getRequestURI());
 
-        return ResponseEntity.status(ex.getStatus()).body(response);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+    }
+
+    @ExceptionHandler({InvalidCredentialsException.class})
+    public ResponseEntity<ErrorResponse> handleInvalidCredentialError(
+            InvalidCredentialsException ex,
+            HttpServletRequest request) {
+
+        ErrorResponse response = new ErrorResponse(HttpStatus.UNAUTHORIZED.value(), ex.getMessage(), request.getRequestURI());
+
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+    }
+
+    @ExceptionHandler({TokenExpiredException.class})
+    public ResponseEntity<ErrorResponse> handleTokenExpiredError(
+            TokenExpiredException ex,
+            HttpServletRequest request) {
+
+        ErrorResponse response = new ErrorResponse(HttpStatus.UNAUTHORIZED.value(), ex.getMessage(), request.getRequestURI());
+
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
     }
 
     @ExceptionHandler(ResourceNotFoundException.class)
@@ -91,9 +120,41 @@ public class GlobalExceptionHandler {
         log.warn("Resource not found: {} {} - {}",
                 request.getMethod(), request.getRequestURI(), ex.getMessage());
 
-        ErrorResponse response = ErrorResponse.of(ErrorCode.RESOURCE_NOT_FOUND, ex.getMessage());
-        response.setPath(request.getRequestURI());
-
+        ErrorResponse response = new ErrorResponse(ErrorCode.RESOURCE_NOT_FOUND.getCode(), ex.getMessage(), request.getRequestURI());
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ErrorResponse> handleNotReadable(
+            HttpMessageNotReadableException ex,
+            HttpServletRequest request) {
+
+
+        ErrorResponse response = new ErrorResponse(
+                ErrorCode.INVALID_REQUEST_BODY.getCode(),
+                ex.getMessage(), request.getRequestURI());
+
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(response);
+    }
+
+    @ExceptionHandler(DateTimeParseException.class)
+    public ResponseEntity<ErrorResponse> handleDateTimeParseError(
+            DateTimeParseException ex,
+            HttpServletRequest request) {
+
+        ErrorResponse response;
+
+        response = ErrorResponse.builder()
+                .code(ErrorCode.INVALID_DATE_FORMAT.getCode())
+                .message(ErrorCode.INVALID_DATE_FORMAT.getMessage())
+                .path(request.getRequestURI())
+                .timestamp(LocalDateTime.now())
+                .build();
+
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(response);
     }
 }

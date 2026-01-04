@@ -74,7 +74,7 @@ jwt:
   access-token-secret: "8mhZcWZVPhDeucdGaUQhUQoSkda3yjAtkBPJNP/4dvQy"
   refresh-token-secret: "Gu4jjMNk9oBnertRHqfRZJdHnz5jihbbnjAHeWNQbpg9"
   access-token-expiration: 3600000
-  refresh-token-expiration: 604800000
+  refresh-token-expiration: 3600000
 
 
 aws:
