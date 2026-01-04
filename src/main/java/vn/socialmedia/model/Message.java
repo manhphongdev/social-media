@@ -4,14 +4,32 @@ import jakarta.persistence.*;
 import lombok.*;
 import vn.socialmedia.enums.MediaType;
 
-@Entity(name = "messages")
+import java.io.Serializable;
+
+@Entity
+@Table(name = "messages")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Message extends AbstractEntity{
+public class Message extends AbstractEntity implements Serializable {
 
+    @Column(columnDefinition = "TEXT")
+    private String message;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "media_type")
+    private MediaType mediaType;
+
+    @Column(name = "media_url", length = 500)
+    private String mediaUrl;
+
+    @Column(name = "is_read", nullable = false)
+    @Builder.Default
+    private Boolean isRead = false;
+
+    // Relationships
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "conversation_id", nullable = false)
     private Conversation conversation;
@@ -19,19 +37,4 @@ public class Message extends AbstractEntity{
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
-
-    @Column(columnDefinition = "TEXT")
-    private String message;
-
-    @Column(name = "media_url", nullable = false, length = 500)
-    private String mediaUrl;
-
-    @Column(name = "media_type", nullable = false, length = 15)
-    @Enumerated(EnumType.STRING)
-    private MediaType mediaType;
-
-    @Column(name = "is_read", nullable = false, columnDefinition = "BOOLEAN")
-    private Boolean isRead;
-
-
 }

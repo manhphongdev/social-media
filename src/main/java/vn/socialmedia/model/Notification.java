@@ -5,14 +5,36 @@ import lombok.*;
 import vn.socialmedia.enums.NotificationTargetType;
 import vn.socialmedia.enums.NotificationType;
 
-@Entity(name = "notifications")
+import java.io.Serializable;
+
+@Entity
+@Table(name = "notifications")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Notification extends AbstractEntity{
+public class Notification extends AbstractEntity implements Serializable {
 
+    @Column(nullable = false, columnDefinition = "TEXT")
+    private String text;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private NotificationType type;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "target_type", nullable = false)
+    private NotificationTargetType targetType;
+
+    @Column(name = "target_id", nullable = false)
+    private Long targetId;
+
+    @Column(name = "is_read", nullable = false)
+    @Builder.Default
+    private Boolean isRead = false;
+
+    // Relationships
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
@@ -20,23 +42,4 @@ public class Notification extends AbstractEntity{
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "from_user_id", nullable = false)
     private User fromUser;
-
-    @Column(name = "type", nullable = false, length = 10)
-    @Enumerated(EnumType.STRING)
-    private NotificationType type;
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "target_type",  nullable = false, length = 10)
-    private NotificationTargetType targetType;
-
-    @Column(name = "target_id", nullable = false)
-    private Long targetId;
-
-    @Column(columnDefinition = "TEXT", nullable = false)
-    private String text;
-
-    @Column(name = "is_readded" ,columnDefinition = "BOOLEAN" , nullable = false)
-    private boolean isReadded;
-
-
 }

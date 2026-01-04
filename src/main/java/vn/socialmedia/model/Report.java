@@ -4,13 +4,16 @@ import jakarta.persistence.*;
 import lombok.*;
 import vn.socialmedia.enums.ReportStatus;
 
-@Entity(name = "reports")
+import java.io.Serializable;
+
+@Entity
+@Table(name = "reports")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Report extends AbstractEntity{
+public class Report extends AbstractEntity implements Serializable {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
@@ -18,7 +21,7 @@ public class Report extends AbstractEntity{
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "post_id", nullable = false)
-    private  Post post;
+    private Post post;
 
     @Column(name = "reason", nullable = false, columnDefinition = "TEXT")
     private String reason;

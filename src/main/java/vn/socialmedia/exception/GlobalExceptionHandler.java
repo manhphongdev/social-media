@@ -112,6 +112,17 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
     }
 
+
+    @ExceptionHandler({JwtException.class})
+    public ResponseEntity<ErrorResponse> handleJwtError(
+            JwtException ex,
+            HttpServletRequest request) {
+
+        ErrorResponse response = new ErrorResponse(HttpStatus.UNAUTHORIZED.value(), ex.getMessage(), request.getRequestURI());
+
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+    }
+
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleResourceNotFound(
             ResourceNotFoundException ex,

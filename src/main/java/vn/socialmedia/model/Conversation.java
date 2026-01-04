@@ -4,25 +4,33 @@ import jakarta.persistence.*;
 import lombok.*;
 import vn.socialmedia.enums.ConversationType;
 
+import java.io.Serializable;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+@Entity
+@Table(name = "conversations")
 @Getter
 @Setter
-@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Entity(name = "conversations")
-public class Conversation extends AbstractEntity{
+@Builder
+public class Conversation extends AbstractEntity implements Serializable {
 
-    @Column(nullable = false)
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private ConversationType type;
 
-    @OneToMany(mappedBy = "conversation", cascade = CascadeType.ALL, orphanRemoval = true)
-    private Set<ConversationParticipants> participants;
+    @Column(name = "last_message_at")
+    private List lastMessageAt;
 
-    @OneToMany(mappedBy = "conversation", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    private List<Message> messages;
+    @OneToMany(mappedBy = "conversation", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private Set<ConversationParticipant> participants = new HashSet<>();
+
+    @OneToMany(mappedBy = "conversation", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private Set<Message> messages = new HashSet<>();
 
 }

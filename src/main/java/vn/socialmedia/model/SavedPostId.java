@@ -9,7 +9,7 @@ import java.io.Serializable;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode
-public class ReactionId implements Serializable {
+public class SavedPostId implements Serializable {
     private Long user;
     private Long post;
 }

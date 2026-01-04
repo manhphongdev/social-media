@@ -6,30 +6,30 @@ import lombok.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "follows")
+@Table(name = "blocks")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@IdClass(FollowId.class)
-public class Follow {
+@IdClass(BlockId.class)
+public class Block {
 
     @Id
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "follower_id")
-    private User follower;
+    @JoinColumn(name = "blocker_id")
+    private User blocker;
 
     @Id
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "followee_id")
-    private User followee;
+    @JoinColumn(name = "blocked_id")
+    private User blocked;
 
-    @Column(name = "created_at")
-    private LocalDateTime createdAt;
+    @Column(name = "blocked_at")
+    private LocalDateTime blockedAt;
 
     @PrePersist
     protected void onCreate() {
-        createdAt = LocalDateTime.now();
+        blockedAt = LocalDateTime.now();
     }
 }

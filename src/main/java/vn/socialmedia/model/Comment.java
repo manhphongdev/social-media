@@ -3,8 +3,8 @@ package vn.socialmedia.model;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity(name = "comments")
 @Getter
@@ -14,24 +14,31 @@ import java.util.List;
 @Builder
 public class Comment extends AbstractEntity {
 
+    @Column(nullable = false, columnDefinition = "TEXT")
+    private String text;
+
+    @Column(name = "is_deleted", nullable = false)
+    @Builder.Default
+    private Boolean isDeleted = false;
+
+    // Relationships
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id",  nullable = false)
+    @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "post_id",  nullable = false)
+    @JoinColumn(name = "post_id", nullable = false)
     private Post post;
-
-    @Column(name = "text", columnDefinition = "TEXT",nullable = false)
-    private String comment;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parent_comment_id")
     private Comment parentComment;
 
-    @OneToMany(mappedBy = "parentComment", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    private List<Comment> replies = new ArrayList<>();
+    @OneToMany(mappedBy = "parentComment", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private Set<Comment> replies = new HashSet<>();
 
-    @Column(nullable = false)
-    private Boolean isDeleted = false;
+    @OneToMany(mappedBy = "comment", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private Set<CommentReaction> reactions = new HashSet<>();
 }

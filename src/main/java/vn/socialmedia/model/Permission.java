@@ -1,12 +1,12 @@
 package vn.socialmedia.model;
 
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 import lombok.*;
 
 import java.io.Serializable;
+import java.util.HashSet;
+import java.util.Set;
 
 @Getter
 @Setter
@@ -17,6 +17,7 @@ import java.io.Serializable;
 public class Permission implements Serializable {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column(nullable = false)
@@ -27,5 +28,9 @@ public class Permission implements Serializable {
 
     @Column(nullable = false)
     private String description;
+
+    @ManyToMany(mappedBy = "permissions", fetch = FetchType.LAZY)
+    private Set<Role> roles = new HashSet<>();
+
 
 }

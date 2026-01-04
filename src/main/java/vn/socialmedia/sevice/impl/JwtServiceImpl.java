@@ -12,7 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import vn.socialmedia.enums.TokenType;
-import vn.socialmedia.exception.InvalidTokenException;
+import vn.socialmedia.exception.JwtException;
 import vn.socialmedia.exception.TokenExpiredException;
 import vn.socialmedia.repository.RefreshTokenRepository;
 import vn.socialmedia.repository.UserRepository;
@@ -68,7 +68,6 @@ public class JwtServiceImpl implements JwtService {
 
     @Override
     public boolean isTokenValid(String token, TokenType tokenType) {
-
         return extractExpiration(token, tokenType).after(Date.from(Instant.now()))
                 && jwtProperties.getIssuer().equals(extractClaim(token, Claims::getIssuer, tokenType));
     }
@@ -109,11 +108,11 @@ public class JwtServiceImpl implements JwtService {
 
         } catch (SignatureException e) {
             log.error("Invalid JWT token signature: {}", e.getMessage());
-            throw new InvalidTokenException("Invalid JWT token signature");
+            throw new JwtException("Invalid JWT token signature");
 
         } catch (MalformedJwtException e) {
             log.error("Invalid format JWT token");
-            throw new InvalidTokenException("Invalid format JWT token");
+            throw new JwtException("Invalid format JWT token");
         }
     }
 

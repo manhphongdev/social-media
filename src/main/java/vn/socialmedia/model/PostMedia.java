@@ -6,23 +6,23 @@ import vn.socialmedia.enums.MediaType;
 
 import java.io.Serializable;
 
+@Entity
+@Table(name = "post_media")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@Entity(name = "post_media")
 public class PostMedia extends AbstractEntity implements Serializable {
-
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "post_id", nullable = false)
-    private Post post;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private MediaType type;
 
     @Column(nullable = false, length = 500)
     private String url;
 
-    @Column(name = "type", nullable = false)
-    @Enumerated(EnumType.STRING)
-    private MediaType mediaType;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "post_id", nullable = false)
+    private Post post;
 
 }

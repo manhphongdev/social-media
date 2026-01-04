@@ -7,7 +7,7 @@ import vn.socialmedia.enums.UserStatus;
 
 import java.io.Serializable;
 import java.time.LocalDate;
-import java.util.List;
+import java.util.HashSet;
 import java.util.Set;
 
 @Getter
@@ -19,70 +19,68 @@ import java.util.Set;
 @Table(name = "users")
 public class User extends AbstractEntity implements Serializable {
 
-    @Column(columnDefinition = "VARCHAR(255)", nullable = false, unique = true)
-    private String email;
-
-    @Column(columnDefinition = "VARCHAR(255)", nullable = false)
-    private String password;
-
-    @Column(columnDefinition = "NVARCHAR(100)", nullable = false)
+    @Column(nullable = false, length = 100)
     private String name;
 
-    @Column(name = "dateOfBirth")
-    private LocalDate dateOfBirth;
+    @Column(nullable = false, unique = true)
+    private String email;
 
-    @Column(columnDefinition = "NVARCHAR(10)", name = "gender")
-    @Enumerated(EnumType.STRING)
-    private Gender gender;
+    @Column(nullable = false)
+    private String password;
 
-    @Column(columnDefinition = "VARCHAR(255)", name = "bio")
-    private String bio;
-
-    @Column(columnDefinition = "VARCHAR(255)", name = "avatar")
+    @Column(length = 255)
     private String avatar;
 
+    @Column(length = 255)
+    private String bio;
+
+    @Column(name = "date_of_birth")
+    private LocalDate dateOfBirth;
+
     @Enumerated(EnumType.STRING)
-    @Column(columnDefinition = "VARCHAR(15)", nullable = false, name = "status")
-    private UserStatus status;
+    @Column(length = 10)
+    private Gender gender;
 
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<Post> posts;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 15)
+    @Builder.Default
+    private UserStatus status = UserStatus.ACTIVE;
 
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<Reaction> reactions;
+    @Column(name = "is_verified")
+    @Builder.Default
+    private Boolean isVerified = false;
 
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<Comment> comments;
-
-    @OneToMany(mappedBy = "follower", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<Follow> followers;
-
-    @OneToMany(mappedBy = "followee", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<Follow> followees;
-
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<Notification> notifications;
-
-    @OneToMany(mappedBy = "fromUser", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<Notification> notificationsFrom;
-
-    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-    private List<Report> reportsSent;
-
-    @OneToMany(mappedBy = "handledBy", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-    private List<Report> reportsHandled;
-
-    @OneToMany(mappedBy = "userJoined", cascade = CascadeType.ALL)
-    private Set<ConversationParticipants> participants;
-
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    private List<Message> messages;
-
-    @ManyToMany(fetch = FetchType.EAGER)
+    // Relationships
+    @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
             name = "user_roles",
             joinColumns = @JoinColumn(name = "user_id"),
             inverseJoinColumns = @JoinColumn(name = "role_id")
     )
-    private Set<Role> roles;
+    @Builder.Default
+    private Set<Role> roles = new HashSet<>();
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private Set<Post> posts = new HashSet<>();
+
+    @OneToMany(mappedBy = "follower", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private Set<Follow> following = new HashSet<>();
+
+    @OneToMany(mappedBy = "followee", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private Set<Follow> followers = new HashSet<>();
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private Set<Notification> notifications = new HashSet<>();
+
+    @OneToMany(mappedBy = "blocker", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private Set<Block> blocking = new HashSet<>();
+
+    @OneToMany(mappedBy = "blocked", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private Set<Block> blockedBy = new HashSet<>();
 }

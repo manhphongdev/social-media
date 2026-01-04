@@ -2,5 +2,7 @@ package vn.socialmedia.enums;
 
 public enum UserRole {
     ADMIN,
-    USER
+    USER,
+    MODERATOR,
+    SYSTEM
 }

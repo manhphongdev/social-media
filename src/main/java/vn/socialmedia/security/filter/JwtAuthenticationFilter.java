@@ -6,6 +6,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -14,6 +15,7 @@ import org.springframework.security.web.authentication.WebAuthenticationDetailsS
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 import vn.socialmedia.enums.TokenType;
+import vn.socialmedia.exception.JwtException;
 import vn.socialmedia.sevice.JwtService;
 
 import java.io.IOException;
@@ -29,8 +31,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
-                                    HttpServletResponse response,
-                                    FilterChain filterChain) throws ServletException, IOException {
+                                    @NotNull HttpServletResponse response,
+                                    @NotNull FilterChain filterChain) throws ServletException, IOException {
 
         final String authHeader = request.getHeader("Authorization");
 
@@ -44,7 +46,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             filterChain.doFilter(request, response);
             return;
         }
-
 
         try {
             String username = jwtService.extractUsername(jwtToken, TokenType.ACCESS_TOKEN);
@@ -61,28 +62,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                             new WebAuthenticationDetailsSource()
                                     .buildDetails(request));
                     SecurityContextHolder.getContext().setAuthentication(authentication);
-
                     log.debug("User {} authenticated successfully", username);
                 }
             }
         } catch (Exception e) {
             SecurityContextHolder.clearContext();
             log.error("Cannot set user authentication: {}", e.getMessage());
-            sendUnauthorized(response, "Token expired or invalid");
+            throw new JwtException("Token expired or invalid");
         }
         filterChain.doFilter(request, response);
     }
 
-    private void sendUnauthorized(HttpServletResponse response, String message)
-            throws IOException {
-
-        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-        response.setContentType("application/json");
-        response.getWriter().write("""
-                {
-                  "code": 401,
-                  "message": "%s"
-                }
-                """.formatted(message));
-    }
 }

@@ -1,20 +1,21 @@
 package vn.socialmedia.model;
 
+
 import jakarta.persistence.*;
 import lombok.*;
-import vn.socialmedia.enums.ReactionType;
 
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "reactions")
+@Table(name = "saved_posts")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@IdClass(ReactionId.class)
-public class Reaction {
+@IdClass(SavedPostId.class)
+public class SavedPost {
+
     @Id
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
@@ -25,16 +26,11 @@ public class Reaction {
     @JoinColumn(name = "post_id")
     private Post post;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private ReactionType type;
-
-    @Column(name = "created_at")
-    private LocalDateTime createdAt;
+    @Column(name = "saved_at")
+    private LocalDateTime savedAt;
 
     @PrePersist
     protected void onCreate() {
-        createdAt = LocalDateTime.now();
+        savedAt = LocalDateTime.now();
     }
-
 }
