@@ -5,10 +5,10 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
+import vn.socialmedia.common.utils.fieldValidator.Birthday;
+import vn.socialmedia.common.utils.fieldValidator.Email;
+import vn.socialmedia.common.utils.fieldValidator.Password;
 import vn.socialmedia.enums.Gender;
-import vn.socialmedia.utils.fieldValidator.Birthday;
-import vn.socialmedia.utils.fieldValidator.Email;
-import vn.socialmedia.utils.fieldValidator.Password;
 
 import java.time.LocalDate;
 

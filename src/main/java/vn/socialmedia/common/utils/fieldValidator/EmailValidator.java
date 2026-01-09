@@ -1,4 +1,4 @@
-package vn.socialmedia.utils.fieldValidator;
+package vn.socialmedia.common.utils.fieldValidator;
 
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;

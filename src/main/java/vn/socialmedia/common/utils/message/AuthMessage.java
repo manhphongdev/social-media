@@ -1,4 +1,4 @@
-package vn.socialmedia.utils.message;
+package vn.socialmedia.common.utils.message;
 
 public class AuthMessage {
     public static final String UNAUTHENTICATED = "Unauthenticated access.";

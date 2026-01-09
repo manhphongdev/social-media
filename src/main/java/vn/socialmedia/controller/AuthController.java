@@ -15,7 +15,7 @@ import vn.socialmedia.dto.request.AccountCreationRequest;
 import vn.socialmedia.dto.request.LoginRequest;
 import vn.socialmedia.dto.response.ResponseData;
 import vn.socialmedia.dto.response.TokenResponse;
-import vn.socialmedia.sevice.AuthenticationService;
+import vn.socialmedia.service.AuthenticationService;
 
 @RestController
 @RequestMapping("/auth")

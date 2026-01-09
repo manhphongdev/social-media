@@ -1,4 +1,4 @@
-package vn.socialmedia.sevice.impl;
+package vn.socialmedia.service.impl;
 
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
@@ -7,8 +7,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.stereotype.Service;
-import vn.socialmedia.security.config.JwtProperties;
-import vn.socialmedia.sevice.CookieService;
+import vn.socialmedia.security.properties.JwtProperties;
+import vn.socialmedia.service.CookieService;
 
 import java.util.Arrays;
 import java.util.Optional;

@@ -1,4 +1,4 @@
-package vn.socialmedia.sevice;
+package vn.socialmedia.service;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;

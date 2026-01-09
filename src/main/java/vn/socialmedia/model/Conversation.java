@@ -6,7 +6,7 @@ import vn.socialmedia.enums.ConversationType;
 
 import java.io.Serializable;
 import java.util.HashSet;
-import java.util.List;
+import java.time.LocalDateTime;
 import java.util.Set;
 
 @Entity
@@ -23,7 +23,7 @@ public class Conversation extends AbstractEntity implements Serializable {
     private ConversationType type;
 
     @Column(name = "last_message_at")
-    private List lastMessageAt;
+    private LocalDateTime lastMessageAt;
 
     @OneToMany(mappedBy = "conversation", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default

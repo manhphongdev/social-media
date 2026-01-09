@@ -13,12 +13,19 @@ public enum ErrorCode {
 
     //Error Authentication
     Email_Already_Exist(2001, "Email already exist"),
-    Password_And_Re_Password_Not_Match(2001, "Password and re-password not match"),
-    REFRESH_TOKEN_NOT_FOUND_IN_COOKIE(2002, "Refresh token not exist or expired in cookie"),
-    INVALID_REFRESH_TOKEN(2003, "Invalid refresh token"),
-    UNAUTHENTICATED(2004, "Unauthenticated"),
+    Password_And_Re_Password_Not_Match(2002, "Password and re-password not match"),
+    REFRESH_TOKEN_NOT_FOUND_IN_COOKIE(2003, "Refresh token not exist or expired in cookie"),
+    INVALID_REFRESH_TOKEN(2004, "Invalid refresh token"),
+    UNAUTHENTICATED(2005, "Unauthenticated"),
+
+
+    //Error Upload File
+    UPLOAD_FILE_FAILED(3001, "Upload File Failed"),
+    INVALID_IMAGE_TYPE(3002, "Invalid image type"),
+
 
     ;
+
     private final int code;
     private final String message;
 

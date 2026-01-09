@@ -1,4 +1,4 @@
-package vn.socialmedia.utils.message;
+package vn.socialmedia.common.utils.message;
 
 public class UserMessage {
     public static final String USER_NOT_EXIST = "User not exist";

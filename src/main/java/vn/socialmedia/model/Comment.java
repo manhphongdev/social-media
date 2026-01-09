@@ -3,16 +3,18 @@ package vn.socialmedia.model;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Set;
 
-@Entity(name = "comments")
+@Entity
+@Table(name = "comments")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Comment extends AbstractEntity {
+public class Comment extends AbstractEntity implements Serializable {
 
     @Column(nullable = false, columnDefinition = "TEXT")
     private String text;

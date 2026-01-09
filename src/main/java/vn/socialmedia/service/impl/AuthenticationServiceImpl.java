@@ -1,4 +1,4 @@
-package vn.socialmedia.sevice.impl;
+package vn.socialmedia.service.impl;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -26,9 +26,11 @@ import vn.socialmedia.model.RefreshTokenBlackList;
 import vn.socialmedia.model.User;
 import vn.socialmedia.repository.RefreshTokenRepository;
 import vn.socialmedia.repository.UserRepository;
-import vn.socialmedia.sevice.AuthenticationService;
-import vn.socialmedia.sevice.CookieService;
-import vn.socialmedia.sevice.JwtService;
+import vn.socialmedia.service.AuthenticationService;
+import vn.socialmedia.service.CookieService;
+import vn.socialmedia.service.JwtService;
+
+import java.util.Set;
 
 
 @Service
@@ -81,12 +83,15 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             throw new BusinessException(ErrorCode.Password_And_Re_Password_Not_Match);
         }
         log.info("Register account with email {}", req.getEmail());
+
+
         userRepository.save(User.builder()
                 .email(req.getEmail())
                 .password(passwordEncoder.encode(req.getPassword()))
                 .name(req.getName())
                 .gender(req.getGender())
                 .dateOfBirth(req.getDateOfBirth())
+                .roles(Set.of())
                 .status(UserStatus.ACTIVE)
                 .build());
     }

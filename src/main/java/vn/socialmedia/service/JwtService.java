@@ -1,4 +1,4 @@
-package vn.socialmedia.sevice;
+package vn.socialmedia.service;
 
 import org.springframework.security.core.userdetails.UserDetails;
 import vn.socialmedia.enums.TokenType;

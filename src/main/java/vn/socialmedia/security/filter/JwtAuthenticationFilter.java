@@ -16,7 +16,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 import vn.socialmedia.enums.TokenType;
 import vn.socialmedia.exception.JwtException;
-import vn.socialmedia.sevice.JwtService;
+import vn.socialmedia.service.JwtService;
 
 import java.io.IOException;
 
@@ -48,27 +48,34 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         try {
+
+            if (!jwtService.isTokenValid(jwtToken, TokenType.ACCESS_TOKEN)) {
+                throw new JwtException("Invalid or expired token");
+            }
+
             String username = jwtService.extractUsername(jwtToken, TokenType.ACCESS_TOKEN);
 
             if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
                 UserDetails userDetails = userDetailsService.loadUserByUsername(username);
 
-                if (jwtService.isTokenValid(jwtToken, TokenType.ACCESS_TOKEN)) {
-                    UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                            userDetails,
-                            null,
-                            userDetails.getAuthorities());
-                    authentication.setDetails(
-                            new WebAuthenticationDetailsSource()
-                                    .buildDetails(request));
-                    SecurityContextHolder.getContext().setAuthentication(authentication);
-                    log.debug("User {} authenticated successfully", username);
-                }
+                UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+                        userDetails,
+                        null,
+                        userDetails.getAuthorities());
+
+                authentication.setDetails(
+                        new WebAuthenticationDetailsSource()
+                                .buildDetails(request));
+
+                SecurityContextHolder.getContext().setAuthentication(authentication);
+                log.debug("User {} authenticated successfully", username);
             }
-        } catch (Exception e) {
+        } catch (JwtException ex) {
             SecurityContextHolder.clearContext();
-            log.error("Cannot set user authentication: {}", e.getMessage());
-            throw new JwtException("Token expired or invalid");
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.setContentType("application/json");
+            response.getWriter().write("{\"error\": \"" + ex.getMessage() + "\"}");
+            return;
         }
         filterChain.doFilter(request, response);
     }

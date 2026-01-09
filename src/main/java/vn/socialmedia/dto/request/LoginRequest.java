@@ -2,8 +2,8 @@ package vn.socialmedia.dto.request;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
-import vn.socialmedia.utils.fieldValidator.Email;
-import vn.socialmedia.utils.fieldValidator.Password;
+import vn.socialmedia.common.utils.fieldValidator.Email;
+import vn.socialmedia.common.utils.fieldValidator.Password;
 
 @Getter
 public class LoginRequest {

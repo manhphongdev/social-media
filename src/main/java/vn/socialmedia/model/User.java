@@ -51,7 +51,7 @@ public class User extends AbstractEntity implements Serializable {
     private Boolean isVerified = false;
 
     // Relationships
-    @ManyToMany(fetch = FetchType.LAZY)
+    @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
             name = "user_roles",
             joinColumns = @JoinColumn(name = "user_id"),

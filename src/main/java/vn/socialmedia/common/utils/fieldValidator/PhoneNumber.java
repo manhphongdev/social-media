@@ -1,4 +1,4 @@
-package vn.socialmedia.utils.fieldValidator;
+package vn.socialmedia.common.utils.fieldValidator;
 
 import jakarta.validation.Constraint;
 import jakarta.validation.Payload;
@@ -6,11 +6,11 @@ import jakarta.validation.Payload;
 import java.lang.annotation.*;
 
 @Documented
-@Constraint(validatedBy = PasswordValidator.class)
+@Constraint(validatedBy = PhoneValidator.class)
 @Target({ElementType.FIELD})
 @Retention(RetentionPolicy.RUNTIME)
-public @interface Password {
-    String message() default "Password must be between 8 and 20 characters!";
+public @interface PhoneNumber {
+    String message() default "Invalid phone number!";
 
     Class<?>[] groups() default {};
 

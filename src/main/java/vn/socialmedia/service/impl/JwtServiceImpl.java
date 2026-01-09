@@ -1,4 +1,4 @@
-package vn.socialmedia.sevice.impl;
+package vn.socialmedia.service.impl;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
@@ -16,8 +16,8 @@ import vn.socialmedia.exception.JwtException;
 import vn.socialmedia.exception.TokenExpiredException;
 import vn.socialmedia.repository.RefreshTokenRepository;
 import vn.socialmedia.repository.UserRepository;
-import vn.socialmedia.security.config.JwtProperties;
-import vn.socialmedia.sevice.JwtService;
+import vn.socialmedia.security.properties.JwtProperties;
+import vn.socialmedia.service.JwtService;
 
 import javax.crypto.SecretKey;
 import java.time.Instant;
@@ -48,8 +48,13 @@ public class JwtServiceImpl implements JwtService {
 
     @Override
     public String extractUsername(String token, TokenType tokenType) {
-        return extractClaim(token, Claims::getSubject, tokenType);
+        try {
+            return extractClaim(token, Claims::getSubject, tokenType);
+        } catch (Exception ex) {
+            return null;
+        }
     }
+
 
     @Override
     public String generateAccessToken(UserDetails userDetails) {
@@ -68,8 +73,15 @@ public class JwtServiceImpl implements JwtService {
 
     @Override
     public boolean isTokenValid(String token, TokenType tokenType) {
-        return extractExpiration(token, tokenType).after(Date.from(Instant.now()))
-                && jwtProperties.getIssuer().equals(extractClaim(token, Claims::getIssuer, tokenType));
+        try {
+            Claims claims = getClaimsFromToken(token, tokenType);
+            boolean notExpired = claims.getExpiration().after(new Date());
+            boolean issuerMatches = jwtProperties.getIssuer().equals(claims.getIssuer());
+            return notExpired && issuerMatches;
+
+        } catch (Exception ex) {
+            return false;
+        }
     }
 
     @Override
@@ -133,6 +145,7 @@ public class JwtServiceImpl implements JwtService {
                     .header().type("JWT")
                     .and()
                     .claims(claims)
+                    .claim("roles", userDetails.getAuthorities())
                     .subject(userDetails.getUsername())
                     .id(UUID.randomUUID().toString())
                     .issuer(jwtProperties.getIssuer())

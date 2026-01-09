@@ -1,17 +1,14 @@
 package vn.socialmedia.security.user;
 
-import lombok.Builder;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import vn.socialmedia.enums.UserStatus;
 import vn.socialmedia.model.User;
 
-import java.io.Serializable;
 import java.util.Collection;
 
-@Builder
-public record UserSecurity(User user) implements UserDetails, Serializable {
+public record UserSecurity(User user) implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
