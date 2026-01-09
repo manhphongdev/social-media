@@ -85,6 +85,19 @@ public class FollowServiceImpl implements FollowService {
                 .toList();
     }
 
+    @Override
+    public void unfollow(Long targetId) {
+        Long userId = getUserId();
+        User user = getUserById(userId);
+        User targerUser = getUserById(targetId);
+
+        Follow follow = followRepo.getFollowByFollowerAndFollowee(user, targerUser)
+                .orElseThrow(() -> new BusinessException(ErrorCode.FOLLOWER_NOT_FOUND));
+
+        followRepo.delete(follow);
+
+    }
+
     private User getUserById(Long userId) {
         return userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User not found"));
     }

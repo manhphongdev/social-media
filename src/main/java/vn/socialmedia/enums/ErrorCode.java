@@ -27,7 +27,7 @@ public enum ErrorCode {
     CANNOT_FOLLOW_BY_MYSELF(4001, "Cannot follow by myself"),
     CANNOT_FOLLOW_USER(4002, "Cannot follow user"),
     USER_FOLLOWED_IN_PASS(4003, "User followed in pass"),
-
+    FOLLOWER_NOT_FOUND(4004, "Follower Not Found"),
     ;
 
     private final int code;

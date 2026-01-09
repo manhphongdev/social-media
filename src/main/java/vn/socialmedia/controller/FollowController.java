@@ -45,4 +45,12 @@ public class FollowController {
         return new ResponseData<>(HttpStatus.OK.value(), "Get followees successfully", followees);
 
     }
+
+    @DeleteMapping("/followee/{longId}")
+    public ResponseData<List<CRUDUserResponse>> unFollow(@PathVariable @Positive Long longId) {
+        log.info("Request unfollow user, id: {}", longId);
+        followService.unfollow(longId);
+        return new ResponseData<>(HttpStatus.OK.value(), "Unfollow user successfully");
+
+    }
 }

@@ -11,4 +11,6 @@ public interface FollowService {
     List<CRUDUserResponse> getFollowers(Long userId);
 
     List<CRUDUserResponse> getFollowees(Long userId);
+
+    void unfollow(Long targetId);
 }
