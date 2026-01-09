@@ -23,6 +23,10 @@ public enum ErrorCode {
     UPLOAD_FILE_FAILED(3001, "Upload File Failed"),
     INVALID_IMAGE_TYPE(3002, "Invalid image type"),
 
+    //Follow Business
+    CANNOT_FOLLOW_BY_MYSELF(4001, "Cannot follow by myself"),
+    CANNOT_FOLLOW_USER(4002, "Cannot follow user"),
+    USER_FOLLOWED_IN_PASS(4003, "User followed in pass"),
 
     ;
 

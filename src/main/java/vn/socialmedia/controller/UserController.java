@@ -23,7 +23,7 @@ public class UserController {
 
     UserService userService;
 
-    @PutMapping(value = "/profile")
+    @PutMapping(value = "/profile") //checked
     public ResponseData<?> updateProfile(@AuthenticationPrincipal UserDetails userDetails,
                                          @Valid @RequestBody UpdateProfileRequest request) {
         log.info("Request to update profile, user {}", userDetails.getUsername());
