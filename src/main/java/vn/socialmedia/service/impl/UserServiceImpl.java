@@ -4,6 +4,7 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import vn.socialmedia.dto.request.UpdateProfileRequest;
@@ -12,8 +13,9 @@ import vn.socialmedia.exception.ResourceNotFoundException;
 import vn.socialmedia.model.User;
 import vn.socialmedia.repository.UserRepository;
 import vn.socialmedia.service.CloudService;
-import vn.socialmedia.service.FileValidationService;
 import vn.socialmedia.service.UserService;
+
+import static vn.socialmedia.helpers.FileHelper.validateImage;
 
 @Service
 @RequiredArgsConstructor
@@ -22,7 +24,7 @@ import vn.socialmedia.service.UserService;
 public class UserServiceImpl implements UserService {
 
     UserRepository userRepository;
-    FileValidationService validFile;
+    @Qualifier("cloudinaryServiceImpl")
     CloudService cloudService;
 
     @Override
@@ -41,7 +43,7 @@ public class UserServiceImpl implements UserService {
     public void updateAvatar(String email, MultipartFile avatar) {
         User user = getUserByEmail(email);
 
-        validFile.validateImage(avatar);
+        validateImage(avatar);
         String filePath = cloudService.uploadFile(avatar, FolderName.AVATAR);
 
         user.setAvatar(filePath);

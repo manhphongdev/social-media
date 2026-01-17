@@ -1,0 +1,22 @@
+services:
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    volumes:
+      - ./prometheus.yaml:/etc/prometheus/prometheus.yaml
+    command:
+      - --config.file=/etc/prometheus/prometheus.yaml
+    ports:
+      - "9090:9090"
+
+  backend-service:
+    image: backend-service
+    container_name: backend-service
+    ports:
+      - "8888:8888"
+    environment:
+      DB_HOST: host.docker.internal
+      DB_PORT: 3306
+      DB_NAME: social_media
+      DB_USER: root
+      DB_PASS: 123456

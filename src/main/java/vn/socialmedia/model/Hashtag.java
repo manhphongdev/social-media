@@ -29,6 +29,9 @@ public class Hashtag implements Serializable {
     @Builder.Default
     private Integer usageCount = 0;
 
+    @Version
+    private Integer version;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
@@ -40,4 +43,5 @@ public class Hashtag implements Serializable {
     protected void onCreate() {
         createdAt = LocalDateTime.now();
     }
+
 }

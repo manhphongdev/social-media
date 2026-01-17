@@ -8,6 +8,8 @@ import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Set;
 
+import static jakarta.persistence.CascadeType.*;
+
 @Entity
 @Table(name = "posts")
 @Getter
@@ -36,11 +38,11 @@ public class Post extends AbstractEntity implements Serializable {
     @JoinColumn(name = "repost_id")
     private Post originalPost;
 
-    @OneToMany(mappedBy = "originalPost", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "originalPost")
     @Builder.Default
     private Set<Post> reposts = new HashSet<>();
 
-    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "post", cascade = {PERSIST, MERGE, REMOVE}, orphanRemoval = true)
     @Builder.Default
     private Set<PostMedia> mediaFiles = new HashSet<>();
 

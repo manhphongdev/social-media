@@ -22,6 +22,8 @@ public enum ErrorCode {
     //Error Upload File
     UPLOAD_FILE_FAILED(3001, "Upload File Failed"),
     INVALID_IMAGE_TYPE(3002, "Invalid image type"),
+    INVALID_FILE_TYPE(3003, "Invalid file type"),
+    INVALID_POST_FILE_TYPE(3003, "Invalid type of post file"),
 
     //Follow Business
     CANNOT_FOLLOW_BY_MYSELF(4001, "Cannot follow by myself"),
