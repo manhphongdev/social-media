@@ -2,12 +2,15 @@ package vn.socialmedia.model;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.Where;
 import vn.socialmedia.enums.PostPrivacy;
 
 import java.io.Serializable;
 import java.util.Set;
 
-import static jakarta.persistence.CascadeType.*;
+import static jakarta.persistence.CascadeType.MERGE;
+import static jakarta.persistence.CascadeType.PERSIST;
 
 @Entity
 @Table(name = "posts")
@@ -16,6 +19,8 @@ import static jakarta.persistence.CascadeType.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@SQLDelete(sql = "UPDATE posts SET is_deleted = true WHERE id = ?")
+@Where(clause = "is_deleted = false")
 public class Post extends AbstractEntity implements Serializable {
     @Column(columnDefinition = "TEXT")
     private String caption;
@@ -25,7 +30,8 @@ public class Post extends AbstractEntity implements Serializable {
     private PostPrivacy privacy;
 
     @Column(name = "is_deleted")
-    private Boolean isDeleted;
+    @Builder.Default
+    private Boolean isDeleted = Boolean.FALSE;
 
     // Relationships
     @ManyToOne(fetch = FetchType.LAZY)
@@ -39,13 +45,13 @@ public class Post extends AbstractEntity implements Serializable {
     @OneToMany(mappedBy = "originalPost")
     private Set<Post> reposts;
 
-    @OneToMany(mappedBy = "post", cascade = {PERSIST, MERGE, REMOVE}, orphanRemoval = true)
+    @OneToMany(mappedBy = "post", cascade = {PERSIST, MERGE})
     private Set<PostMedia> mediaFiles;
 
-    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "post")
     private Set<Comment> comments;
 
-    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "post")
     private Set<Reaction> reactions;
 
     @ManyToMany(fetch = FetchType.LAZY)
@@ -56,9 +62,9 @@ public class Post extends AbstractEntity implements Serializable {
     )
     private Set<Hashtag> hashtags;
 
-    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "post")
     private Set<SavedPost> savedByUsers;
 
-    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "post")
     private Set<Report> reports;
 }

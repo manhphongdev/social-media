@@ -136,6 +136,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                         .jid(jwtService.extractId(token, TokenType.REFRESH_TOKEN))
                         .expiresAt(jwtService.extractExpiration(token, TokenType.REFRESH_TOKEN).toInstant())
                         .build());
+                //TODO delete refreshToken in Cookie
             } catch (Exception e) {
                 log.warn("Token invalid or expired during logout: {}", e.getMessage());
             }

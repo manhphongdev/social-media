@@ -25,7 +25,7 @@ import vn.socialmedia.service.AuthenticationService;
 public class AuthController {
     private final AuthenticationService authenticationService;
 
-    @PostMapping("/login")
+    @PostMapping("/login") //checked
     public ResponseData<TokenResponse> login(@Valid @RequestBody LoginRequest req, HttpServletResponse httpResponse) {
         log.info("Login Request: {}", req.getEmail());
 
@@ -39,14 +39,14 @@ public class AuthController {
         return new ResponseData<>(HttpStatus.OK.value(), "Logout successful");
     }
 
-    @PostMapping("/register")
+    @PostMapping("/register") //checked
     public ResponseData<?> register(@Valid @RequestBody AccountCreationRequest req) {
         log.info("Account Registration Request, email: {}", req.getEmail());
         authenticationService.registerAccount(req);
         return new ResponseData<>(HttpStatus.CREATED.value(), "Account created successfully");
     }
 
-    @PostMapping("/refresh-token")
+    @PostMapping("/refresh-token")  //checked
     public ResponseData<?> refreshToken(HttpServletRequest request) {
         log.info("Refresh token request");
         return new ResponseData<>(HttpStatus.OK.value(), "Refresh successful", authenticationService.refreshToken(request));

@@ -9,4 +9,5 @@ public interface PostService {
 
     void createPost(PostCreationRequest request, List<MultipartFile> files);
 
+    void deletePost(Long id);
 }

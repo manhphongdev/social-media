@@ -28,7 +28,7 @@ import static vn.socialmedia.common.security.SecurityUtil.getUserId;
 
 @Service
 @RequiredArgsConstructor
-@Slf4j
+@Slf4j(topic = "POST_SERVICE")
 public class PostServiceImpl implements PostService {
     private final PostRepo postRepo;
     private final UserRepository userRepo;
@@ -49,7 +49,6 @@ public class PostServiceImpl implements PostService {
                             FileHelper.validateVideo(file);
                             return cloudService.uploadVideo(file, FolderName.POST_VIDEO);
                         }
-
                 );
     }
 
@@ -72,7 +71,12 @@ public class PostServiceImpl implements PostService {
         post.setMediaFiles(medias);
 
         postRepo.save(post);
+    }
 
+    @Override
+    public void deletePost(Long id) {
+        Post post = postRepo.findById(id).orElseThrow(() -> new ResourceNotFoundException("Post not found"));
+        postRepo.delete(post);
     }
 
     private Set<PostMedia> handlePostMediaUpload(List<MultipartFile> files, Post post) {
