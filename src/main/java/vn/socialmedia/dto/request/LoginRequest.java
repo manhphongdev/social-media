@@ -2,10 +2,12 @@ package vn.socialmedia.dto.request;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
+import lombok.Setter;
 import vn.socialmedia.common.utils.fieldValidator.Email;
 import vn.socialmedia.common.utils.fieldValidator.Password;
 
 @Getter
+@Setter
 public class LoginRequest {
 
     @Email(message = "Invalid email format")

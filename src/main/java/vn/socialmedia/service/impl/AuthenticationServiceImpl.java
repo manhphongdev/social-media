@@ -129,10 +129,18 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     @Override
     public void logout(HttpServletRequest httpRequest, HttpServletResponse httpResponse) {
         String token = cookieService.getRefreshToken(httpRequest).orElse(null);
-        refreshTokenRepository.save(RefreshTokenBlackList.builder()
-                .jid(jwtService.extractId(token, TokenType.REFRESH_TOKEN))
-                .expiresAt(jwtService.extractExpiration(token, TokenType.REFRESH_TOKEN).toInstant())
-                .build());
+
+        if (token != null) {
+            try {
+                refreshTokenRepository.save(RefreshTokenBlackList.builder()
+                        .jid(jwtService.extractId(token, TokenType.REFRESH_TOKEN))
+                        .expiresAt(jwtService.extractExpiration(token, TokenType.REFRESH_TOKEN).toInstant())
+                        .build());
+            } catch (Exception e) {
+                log.warn("Token invalid or expired during logout: {}", e.getMessage());
+            }
+        }
+        cookieService.removeRefreshToken(httpResponse);
     }
 
 }

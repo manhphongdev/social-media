@@ -22,5 +22,4 @@ public class PostCreationRequest {
     private List<@Pattern(regexp = "^#+[A-Za-z0-9_]+$", message = "Invalid hashtag")
     @Size(max = 100) String> hashtags;
 
-
 }
