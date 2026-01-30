@@ -20,7 +20,6 @@ public enum ErrorCode {
     INVALID_REFRESH_TOKEN(2004, "Invalid refresh token"),
     UNAUTHENTICATED(2005, "Unauthenticated"),
 
-
     //Error Upload File
     UPLOAD_FILE_FAILED(3001, "Upload File Failed"),
     INVALID_IMAGE_TYPE(3002, "Invalid image type"),
@@ -29,12 +28,18 @@ public enum ErrorCode {
     FILE_EXCEED_LIMIT(3005, "File exceed limit"),
     INVALID_VIDEO_TYPE(3006, "Invalid image type"),
 
-
     //Follow Business
     CANNOT_FOLLOW_BY_MYSELF(4001, "Cannot follow by myself"),
     CANNOT_FOLLOW_USER(4002, "Cannot follow user"),
     USER_FOLLOWED_IN_PASS(4003, "User followed in pass"),
     FOLLOWER_NOT_FOUND(4004, "Follower Not Found"),
+
+    // Post Error
+    POST_NOT_FOUND(5001, "Post not found with id %d"),
+
+    // Comment Error
+    COMMENT_NOT_FOUND(6001, "Comment id %d not found in post id %d"),
+
     ;
 
     private final int code;

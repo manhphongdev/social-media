@@ -32,12 +32,12 @@ public class CommentServiceImpl implements CommentService {
         User user = userRepository.getReferenceByEmail(currentUser.getUsername());
 
         Post post = postRepo.findById(request.getPostId()).orElseThrow(() ->
-                new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "Post not found with id " + request.getPostId()));
+                new BusinessException(ErrorCode.POST_NOT_FOUND, request.getPostId()));
 
         Comment parent = new Comment();
         if (request.getCommentParentId() != null) {
             parent = commentRepository.findById(request.getCommentParentId()).orElseThrow(() ->
-                    new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "Comment parent not found with id: " + request.getCommentParentId()));
+                    new BusinessException(ErrorCode.COMMENT_NOT_FOUND, request.getCommentParentId(), request.getPostId()));
         }
 
         Comment comment = commentMapper.toEntity(request);
