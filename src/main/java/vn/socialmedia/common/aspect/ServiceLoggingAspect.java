@@ -45,7 +45,9 @@ public class ServiceLoggingAspect {
      */
     @Before("allServiceMethods()")
     public void logBefore(JoinPoint joinPoint) {
-        log.info("[Service method] {} started.", joinPoint.getSignature().getName());
+        String className = joinPoint.getTarget().getClass().getSimpleName();
+        String methodName = joinPoint.getSignature().getName();
+        log.info("[Service] {}#{} started.", className, methodName);
     }
 
     /**
@@ -66,7 +68,15 @@ public class ServiceLoggingAspect {
      */
     @AfterThrowing(pointcut = "allServiceMethods()", throwing = "error")
     public void logAfterThrowing(JoinPoint joinPoint, Throwable error) {
-        log.error("[Service method] {} threw exception: {}", joinPoint.getSignature().getName(), error.getMessage());
-        log.error(error.getMessage(), error);
+
+        String className = joinPoint.getTarget().getClass().getSimpleName();
+        String methodName = joinPoint.getSignature().getName();
+
+        log.error(
+                "[Service] {}#{} threw exception: {}",
+                className,
+                methodName,
+                error.getMessage()
+        );
     }
 }
