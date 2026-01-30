@@ -36,11 +36,11 @@ public class Comment extends AbstractEntity implements Serializable {
     @JoinColumn(name = "parent_comment_id")
     private Comment parentComment;
 
-    @OneToMany(mappedBy = "parentComment", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "parentComment")
     @Builder.Default
     private Set<Comment> replies = new HashSet<>();
 
-    @OneToMany(mappedBy = "comment", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "comment")
     @Builder.Default
     private Set<CommentReaction> reactions = new HashSet<>();
 }

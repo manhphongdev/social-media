@@ -11,6 +11,7 @@ public enum ErrorCode {
     INVALID_ENUM_VALUE(1004, "Invalid Enum Value"),
     INVALID_REQUEST_BODY(1005, "Invalid Request Body"),
     ENUM_MUST_NOT_BE_NULL(1006, "Enum Must Not Be Null"),
+    USER_ID_NULL(1007, "User ID is Null"),
 
     //Error Authentication
     Email_Already_Exist(2001, "Email already exist"),
