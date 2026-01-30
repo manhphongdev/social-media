@@ -70,8 +70,8 @@ management:
 jwt:
   access-token-secret: "8mhZcWZVPhDeucdGaUQhUQoSkda3yjAtkBPJNP/4dvQy"
   refresh-token-secret: "Gu4jjMNk9oBnertRHqfRZJdHnz5jihbbnjAHeWNQbpg9"
-  access-token-expiration: 3600000
-  refresh-token-expiration: 3600000
+  access-token-expiration: 360000000
+  refresh-token-expiration: 360000000
 
 
 aws:
@@ -84,8 +84,8 @@ aws:
     url: https://d28ic9z7shvx92.cloudfront.net
 
 spring.servlet.multipart.enabled: true
-spring.servlet.multipart.max-file-size: 50MB
-spring.servlet.multipart.max-request-size: 50MB
+spring.servlet.multipart.max-file-size: 1000MB
+spring.servlet.multipart.max-request-size: 1000MB
 
 cloudinary:
   cloud_name: ${CLOUD_NAME}

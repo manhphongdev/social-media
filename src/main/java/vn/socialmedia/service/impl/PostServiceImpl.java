@@ -1,5 +1,6 @@
 package vn.socialmedia.service.impl;
 
+import jakarta.annotation.PostConstruct;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,10 +21,8 @@ import vn.socialmedia.service.CloudService;
 import vn.socialmedia.service.HashtagService;
 import vn.socialmedia.service.PostService;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
+import java.util.function.Function;
 
 import static vn.socialmedia.common.security.SecurityUtil.getUserId;
 
@@ -34,8 +33,25 @@ public class PostServiceImpl implements PostService {
     private final PostRepo postRepo;
     private final UserRepository userRepo;
     private final HashtagService hashtagService;
-
     private final CloudService cloudService;
+
+    private Map<MediaType, Function<MultipartFile, String>> uploadStrategies;
+
+    @PostConstruct
+    void initUploadStrategies() {
+        uploadStrategies =
+                Map.of(
+                        MediaType.IMAGE, file -> {
+                            FileHelper.validateImage(file);
+                            return cloudService.uploadImage(file, FolderName.POST_IMAGE);
+                        },
+                        MediaType.VIDEO, file -> {
+                            FileHelper.validateVideo(file);
+                            return cloudService.uploadVideo(file, FolderName.POST_VIDEO);
+                        }
+
+                );
+    }
 
     @Override
     @Transactional
@@ -44,7 +60,6 @@ public class PostServiceImpl implements PostService {
         User user = userRepo.findById(Objects.requireNonNull(getUserId())).orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         Set<Hashtag> normalizedTags = hashtagService.handleHashtags(request.getHashtags());
-
 
         Post post = Post.builder()
                 .user(user)
@@ -73,13 +88,10 @@ public class PostServiceImpl implements PostService {
         return postMedias;
     }
 
-
     private String processMediaUpload(MultipartFile file, MediaType mediaType) {
-        return switch (mediaType) {
-            case IMAGE -> cloudService.uploadFile(file, FolderName.POST_IMAGE);
-            case VIDEO -> cloudService.uploadFile(file, FolderName.POST_VIDEO);
-        };
+        return Optional.ofNullable(uploadStrategies.get(mediaType))
+                .orElseThrow(() -> new IllegalArgumentException("Unsupported media type"))
+                .apply(file);
     }
-
 
 }

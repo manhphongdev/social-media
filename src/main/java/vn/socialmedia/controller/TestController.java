@@ -20,6 +20,6 @@ public class TestController {
 
     @PostMapping(value = "/upload", consumes = "multipart/form-data")
     public String testUploadFile(@RequestPart MultipartFile file) {
-        return cloudService.uploadFile(file, FolderName.AVATAR);
+        return cloudService.uploadImage(file, FolderName.AVATAR);
     }
 }

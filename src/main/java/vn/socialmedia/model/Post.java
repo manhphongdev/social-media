@@ -5,7 +5,6 @@ import lombok.*;
 import vn.socialmedia.enums.PostPrivacy;
 
 import java.io.Serializable;
-import java.util.HashSet;
 import java.util.Set;
 
 import static jakarta.persistence.CascadeType.*;
@@ -26,8 +25,7 @@ public class Post extends AbstractEntity implements Serializable {
     private PostPrivacy privacy;
 
     @Column(name = "is_deleted")
-    @Builder.Default
-    private Boolean isDeleted = false;
+    private Boolean isDeleted;
 
     // Relationships
     @ManyToOne(fetch = FetchType.LAZY)
@@ -39,20 +37,16 @@ public class Post extends AbstractEntity implements Serializable {
     private Post originalPost;
 
     @OneToMany(mappedBy = "originalPost")
-    @Builder.Default
-    private Set<Post> reposts = new HashSet<>();
+    private Set<Post> reposts;
 
     @OneToMany(mappedBy = "post", cascade = {PERSIST, MERGE, REMOVE}, orphanRemoval = true)
-    @Builder.Default
-    private Set<PostMedia> mediaFiles = new HashSet<>();
+    private Set<PostMedia> mediaFiles;
 
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
-    @Builder.Default
-    private Set<Comment> comments = new HashSet<>();
+    private Set<Comment> comments;
 
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
-    @Builder.Default
-    private Set<Reaction> reactions = new HashSet<>();
+    private Set<Reaction> reactions;
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
@@ -60,14 +54,11 @@ public class Post extends AbstractEntity implements Serializable {
             joinColumns = @JoinColumn(name = "post_id"),
             inverseJoinColumns = @JoinColumn(name = "hashtag_id")
     )
-    @Builder.Default
-    private Set<Hashtag> hashtags = new HashSet<>();
+    private Set<Hashtag> hashtags;
 
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
-    @Builder.Default
-    private Set<SavedPost> savedByUsers = new HashSet<>();
+    private Set<SavedPost> savedByUsers;
 
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
-    @Builder.Default
-    private Set<Report> reports = new HashSet<>();
+    private Set<Report> reports;
 }

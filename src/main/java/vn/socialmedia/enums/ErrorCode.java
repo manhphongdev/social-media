@@ -9,7 +9,8 @@ public enum ErrorCode {
     RESOURCE_NOT_FOUND(1002, "Resource Not Found"),
     INVALID_DATE_FORMAT(1003, "Invalid Date Format"),
     INVALID_ENUM_VALUE(1004, "Invalid Enum Value"),
-    INVALID_REQUEST_BODY(1005, ""),
+    INVALID_REQUEST_BODY(1005, "Invalid Request Body"),
+    ENUM_MUST_NOT_BE_NULL(1006, "Enum Must Not Be Null"),
 
     //Error Authentication
     Email_Already_Exist(2001, "Email already exist"),
@@ -23,7 +24,10 @@ public enum ErrorCode {
     UPLOAD_FILE_FAILED(3001, "Upload File Failed"),
     INVALID_IMAGE_TYPE(3002, "Invalid image type"),
     INVALID_FILE_TYPE(3003, "Invalid file type"),
-    INVALID_POST_FILE_TYPE(3003, "Invalid type of post file"),
+    INVALID_POST_FILE_TYPE(3004, "Invalid type of post file"),
+    FILE_EXCEED_LIMIT(3005, "File exceed limit"),
+    INVALID_VIDEO_TYPE(3006, "Invalid image type"),
+
 
     //Follow Business
     CANNOT_FOLLOW_BY_MYSELF(4001, "Cannot follow by myself"),

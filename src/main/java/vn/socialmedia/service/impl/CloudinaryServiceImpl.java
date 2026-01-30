@@ -10,6 +10,7 @@ import vn.socialmedia.enums.FolderName;
 import vn.socialmedia.service.CloudService;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Map;
 import java.util.UUID;
 
@@ -20,12 +21,12 @@ public class CloudinaryServiceImpl implements CloudService {
     private final Cloudinary cloudinary;
 
     @Override
-    public String uploadFile(MultipartFile file, FolderName folder) {
+    public String uploadImage(MultipartFile file, FolderName folder) {
         try {
             Map uploadResults = cloudinary.uploader().upload(
                     file.getBytes(), ObjectUtils.asMap("folder", folder.getPath(),
-                            "publicId", UUID.randomUUID().toString(),
-                            "resource_type", "auto")
+                            "public_id", UUID.randomUUID().toString(),
+                            "resource_type", "image")
             );
             return (String) uploadResults.get("secure_url");
 
@@ -33,6 +34,27 @@ public class CloudinaryServiceImpl implements CloudService {
             throw new RuntimeException("Upload File Failed: " + e.getMessage());
         }
     }
+
+    @Override
+    public String uploadVideo(MultipartFile file, FolderName folder) {
+        try (InputStream is = file.getInputStream()) {
+
+            Map options = ObjectUtils.asMap(
+                    "resource_type", "video",
+                    "folder", folder.getPath(),
+                    "public_id", UUID.randomUUID().toString(),
+                    "chunk_size", 6_000_000 // ~6MB
+            );
+
+            Map<?, ?> result = cloudinary.uploader().uploadLarge(is, options);
+
+            return result.get("secure_url").toString();
+
+        } catch (Exception e) {
+            throw new RuntimeException("Upload video failed", e);
+        }
+    }
+
 
     @Override
     public void deleteFile(String url) {

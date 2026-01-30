@@ -26,7 +26,7 @@ public class S3ServiceImpl implements CloudService {
     private final AWSProperties awsProperties;
 
     @Override
-    public String uploadFile(MultipartFile file, FolderName folder) {
+    public String uploadImage(MultipartFile file, FolderName folder) {
         String key = folder.getPath() + "/" + UUID.randomUUID() + "-" + file.getOriginalFilename();
         try {
             PutObjectRequest request = PutObjectRequest.builder()
@@ -43,6 +43,11 @@ public class S3ServiceImpl implements CloudService {
             throw new RuntimeException("Upload File Failed, cause: " + e.getMessage());
         }
         return awsProperties.getCloudfront().getUrl() + "/" + key;
+    }
+
+    @Override
+    public String uploadVideo(MultipartFile file, FolderName folder) {
+        return "";
     }
 
     @Override

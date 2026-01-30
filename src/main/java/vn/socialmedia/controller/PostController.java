@@ -22,7 +22,7 @@ public class PostController {
 
     @PostMapping(value = "/create", consumes = "multipart/form-data")
     public ResponseData<?> createPost(@Valid @ModelAttribute PostCreationRequest request,
-                                      @RequestPart(required = false) List<MultipartFile> files) {
+                                      @RequestParam(required = false) List<MultipartFile> files) {
         log.info("Request to create post");
         postService.createPost(request, files);
 

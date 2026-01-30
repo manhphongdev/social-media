@@ -44,7 +44,7 @@ public class UserServiceImpl implements UserService {
         User user = getUserByEmail(email);
 
         validateImage(avatar);
-        String filePath = cloudService.uploadFile(avatar, FolderName.AVATAR);
+        String filePath = cloudService.uploadImage(avatar, FolderName.AVATAR);
 
         user.setAvatar(filePath);
         userRepository.save(user);
