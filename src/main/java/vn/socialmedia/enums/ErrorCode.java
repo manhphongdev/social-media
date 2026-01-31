@@ -36,10 +36,13 @@ public enum ErrorCode {
 
     // Post Error
     POST_NOT_FOUND(5001, "Post not found with id %d"),
+    NO_ACCESS_POST(5002, "No access to the post"),
 
     // Comment Error
     COMMENT_NOT_FOUND(6001, "Comment id %d not found in post id %d"),
 
+    // User Error
+    USER_NOT_FOUND(6003, "User not found with id %d"),
     ;
 
     private final int code;

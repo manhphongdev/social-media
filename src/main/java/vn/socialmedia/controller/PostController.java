@@ -11,10 +11,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import vn.socialmedia.dto.request.PostCreationRequest;
+import vn.socialmedia.dto.response.CRUDPostResponse;
 import vn.socialmedia.dto.response.ResponseData;
 import vn.socialmedia.service.PostService;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/posts")
@@ -54,7 +53,7 @@ public class PostController {
     )
     @PostMapping(value = "/create", consumes = "multipart/form-data") //checked
     public ResponseData<?> createPost(@Valid @ModelAttribute PostCreationRequest request,
-                                      @RequestParam(required = false) List<MultipartFile> files) {
+                                      @RequestParam(required = false, name = "files") MultipartFile[] files) {
         log.info("Request to create post");
         postService.createPost(request, files);
 
@@ -87,6 +86,13 @@ public class PostController {
         postService.deletePost(id);
 
         return new ResponseData<>(HttpStatus.OK.value(), "Post deleted successfully");
+    }
+
+    @GetMapping("/{id}")
+    public ResponseData<?> getPost(@PathVariable long id) {
+        log.info("Request to get post by id {}", id);
+        CRUDPostResponse post = postService.getPost(id);
+        return new ResponseData<>(HttpStatus.OK.value(), "Post found successfully", post);
     }
 
 }

@@ -18,7 +18,7 @@ import vn.socialmedia.service.CommentService;
 public class CommentController {
     private final CommentService commentService;
 
-    @PostMapping("/create")
+    @PostMapping("/create") //checked
     public ResponseData<?> createComment(@RequestBody CommentCreationRequest request) {
         log.info("Request createComment");
         commentService.create(request);
