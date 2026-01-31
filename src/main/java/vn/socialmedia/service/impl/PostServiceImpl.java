@@ -104,7 +104,7 @@ public class PostServiceImpl implements PostService {
         if (post.getPrivacy() == FRIENDS_ONLY && !canViewFriendOnlyPost(post)) {
             throw new BusinessException(NO_ACCESS_POST);
         }
-        //TODO count reactions, comments
+
         return CRUDPostResponse.builder()
                 .postId(id)
                 .privacy(post.getPrivacy())
@@ -116,6 +116,8 @@ public class PostServiceImpl implements PostService {
                 .caption(post.getCaption())
                 .mediaUrl(post.getMediaFiles().stream().map(PostMedia::getUrl).toList())
                 .createdAt(post.getCreatedAt())
+                .reactionCount(post.getReactions().size())
+                .commentCount(post.getComments().size())
                 .build();
     }
 

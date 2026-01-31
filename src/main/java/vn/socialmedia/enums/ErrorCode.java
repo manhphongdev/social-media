@@ -1,6 +1,7 @@
 package vn.socialmedia.enums;
 
 import lombok.Getter;
+import org.springframework.http.HttpStatus;
 
 @Getter
 public enum ErrorCode {
@@ -19,6 +20,7 @@ public enum ErrorCode {
     REFRESH_TOKEN_NOT_FOUND_IN_COOKIE(2003, "Refresh token not exist or expired in cookie"),
     INVALID_REFRESH_TOKEN(2004, "Invalid refresh token"),
     UNAUTHENTICATED(2005, "Unauthenticated"),
+    NO_PERMISSION(HttpStatus.FORBIDDEN.value(), "No Permission"),
 
     //Error Upload File
     UPLOAD_FILE_FAILED(3001, "Upload File Failed"),
