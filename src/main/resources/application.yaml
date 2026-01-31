@@ -25,6 +25,11 @@ spring:
         dialect: org.hibernate.dialect.MySQL8Dialect
         jdbc:
           time_zone: Asia/Ho_Chi_Minh
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 1000MB
+      max-request-size: 1000MB
 
   security:
     oauth2:
@@ -82,10 +87,6 @@ aws:
     region: ap-southeast-1
   cloudfront:
     url: https://d28ic9z7shvx92.cloudfront.net
-
-spring.servlet.multipart.enabled: true
-spring.servlet.multipart.max-file-size: 1000MB
-spring.servlet.multipart.max-request-size: 1000MB
 
 cloudinary:
   cloud_name: ${CLOUD_NAME}
