@@ -84,6 +84,10 @@ public class PostServiceImpl implements PostService {
     @Override
     public void deletePost(Long id) {
         Post post = postRepo.findById(id).orElseThrow(() -> new BusinessException(POST_NOT_FOUND, id));
+
+        if (!post.getUser().equals(getCurrentUser())) {
+            throw new BusinessException(NO_PERMISSION);
+        }
         postRepo.delete(post);
     }
 
