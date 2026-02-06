@@ -131,6 +131,11 @@
             <scope>runtime</scope>
         </dependency>
 
+        <!--Websocket-->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-websocket</artifactId>
+        </dependency>
 
         <!--Validate file-->
         <dependency>

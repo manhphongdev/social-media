@@ -26,6 +26,8 @@ import vn.socialmedia.service.PostService;
 
 import java.util.*;
 import java.util.function.Function;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static vn.socialmedia.common.security.SecurityUtil.getUserId;
 import static vn.socialmedia.enums.ErrorCode.*;
@@ -63,9 +65,12 @@ public class PostServiceImpl implements PostService {
     @Transactional
     public void createPost(PostCreationRequest request, MultipartFile[] files) {
 
-        User user = userRepo.findById(Objects.requireNonNull(getUserId())).orElseThrow(() -> new BusinessException(USER_NOT_FOUND, getUserId()));
+        User user = userRepo.findById(Objects.requireNonNull(getUserId())).orElseThrow(() ->
+                new BusinessException(USER_NOT_FOUND, getUserId()));
 
-        Set<Hashtag> normalizedTags = hashtagService.handleHashtags(request.getHashtags());
+        Set<String> hashtags = extractHashtags(request.getText());
+
+        Set<Hashtag> normalizedTags = hashtagService.handleHashtags(hashtags);
 
         Post post = Post.builder()
                 .user(user)
@@ -151,6 +156,28 @@ public class PostServiceImpl implements PostService {
     private boolean canViewFriendOnlyPost(Post post) {
         return post.getUser().equals(getCurrentUser())
                 || followRepo.isFollower(post.getUser().getId(), getCurrentUser().getId());
+    }
+
+    private Set<String> extractHashtags(String content) {
+        if (content == null) return Set.of();
+
+        return Pattern.compile("(?<![\\p{L}\\p{N}_])#\\p{L}[\\p{L}\\p{N}_]*")
+                .matcher(content)
+                .results()
+                .map(m -> normalizeHashtag(m.group()))
+                .collect(Collectors.toSet());
+    }
+
+    private String normalizeHashtag(String hashtag) {
+        if (hashtag == null) {
+            return null;
+        }
+        hashtag = hashtag.toLowerCase().trim();
+
+        if (hashtag.contains("#")) {
+            hashtag = hashtag.replace("#", "");
+        }
+        return hashtag;
     }
 
 }

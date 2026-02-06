@@ -8,8 +8,10 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import vn.socialmedia.dto.request.UpdateProfileRequest;
+import vn.socialmedia.dto.response.CRUDUserResponse;
+import vn.socialmedia.enums.ErrorCode;
 import vn.socialmedia.enums.FolderName;
-import vn.socialmedia.exception.ResourceNotFoundException;
+import vn.socialmedia.exception.BusinessException;
 import vn.socialmedia.model.User;
 import vn.socialmedia.repository.UserRepository;
 import vn.socialmedia.service.CloudService;
@@ -50,8 +52,21 @@ public class UserServiceImpl implements UserService {
         userRepository.save(user);
     }
 
+    @Override
+    public CRUDUserResponse getProfile(String email) {
+        User user = getUserByEmail(email);
+        return CRUDUserResponse.builder()
+                .id(user.getId())
+                .name(user.getName())
+                .avatarUrl(user.getAvatar())
+                .dateOfBirth(user.getDateOfBirth())
+                .gender(user.getGender())
+                .bio(user.getBio())
+                .build();
+    }
+
     private User getUserByEmail(String email) {
-        return userRepository.findByEmail(email).orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        return userRepository.findByEmail(email).orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
     }
 
 

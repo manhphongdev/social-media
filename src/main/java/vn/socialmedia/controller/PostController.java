@@ -56,7 +56,7 @@ public class PostController {
                                       @RequestParam(required = false, name = "files") MultipartFile[] files) {
         log.info("Request to create post");
         postService.createPost(request, files);
-
+        //TODO must be update(extract hashtag from content)
         return new ResponseData<>(HttpStatus.CREATED.value(), "Post created successfully");
     }
 

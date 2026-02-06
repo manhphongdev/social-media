@@ -13,8 +13,6 @@ import vn.socialmedia.model.Post;
 import vn.socialmedia.model.User;
 import vn.socialmedia.repository.CommentRepository;
 import vn.socialmedia.repository.PostRepo;
-import vn.socialmedia.repository.UserRepository;
-import vn.socialmedia.security.user.UserSecurity;
 import vn.socialmedia.service.CommentService;
 
 @Service
@@ -22,14 +20,12 @@ import vn.socialmedia.service.CommentService;
 @RequiredArgsConstructor
 public class CommentServiceImpl implements CommentService {
     private final CommentRepository commentRepository;
-    private final UserRepository userRepository;
     private final PostRepo postRepo;
     private final CommentMapper commentMapper;
 
     @Override
     public void create(CommentCreationRequest request) {
-        UserSecurity currentUser = SecurityUtil.getCurrentUser();
-        User user = userRepository.getReferenceByEmail(currentUser.getUsername());
+        User user = SecurityUtil.getUser();
 
         Post post = postRepo.findById(request.getPostId()).orElseThrow(() ->
                 new BusinessException(ErrorCode.POST_NOT_FOUND, request.getPostId()));
@@ -46,6 +42,6 @@ public class CommentServiceImpl implements CommentService {
         comment.setUser(user);
 
         commentRepository.save(comment);
-        //TODO update notification
+        //TODO add notification
     }
 }

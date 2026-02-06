@@ -26,12 +26,12 @@ public class SecurityUtil {
         return null;
     }
 
-    public static UserSecurity getCurrentUser() {
+    public static User getUser() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth == null || !auth.isAuthenticated() || auth.getPrincipal().equals("anonymousUser")) {
             throw new BusinessException(ErrorCode.UNAUTHENTICATED);
         }
-        return (UserSecurity) auth.getPrincipal();
+        return ((UserSecurity) auth.getPrincipal()).user();
     }
 
 

@@ -38,4 +38,12 @@ public class UserController {
         userService.updateAvatar(userDetails.getUsername(), avatar);
         return new ResponseData<>(HttpStatus.OK.value(), "Avatar updated successfully");
     }
+
+    @GetMapping(value = "/profile/me")
+    public ResponseData<?> getProfile(@AuthenticationPrincipal UserDetails userDetails) {
+
+
+        return new ResponseData<>(HttpStatus.OK.value(), "Get profile successfully",
+                userService.getProfile(userDetails.getUsername()));
+    }
 }

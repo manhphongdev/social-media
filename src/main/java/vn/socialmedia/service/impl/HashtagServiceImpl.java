@@ -10,10 +10,7 @@ import vn.socialmedia.repository.HashtagRepo;
 import vn.socialmedia.service.HashtagService;
 
 import java.util.HashSet;
-import java.util.List;
-import java.util.Objects;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -23,18 +20,12 @@ public class HashtagServiceImpl implements HashtagService {
 
     @Override
     @Transactional
-    public Set<Hashtag> handleHashtags(List<String> hashtags) {
-
-        Set<String> names = hashtags.stream()
-                .map(this::normalizeHashtag)
-                .filter(Objects::nonNull)
-                .collect(Collectors.toSet());
-
+    public Set<Hashtag> handleHashtags(Set<String> hashtags) {
 
         Set<Hashtag> results = new HashSet<>();
 
-        for (String name : names) {
-            int updated = hashtagRepo.incrementUsage(name);
+        for (String hashtag : hashtags) {
+            int updated = hashtagRepo.incrementUsage(hashtag);
 
             Hashtag tag;
 
@@ -42,31 +33,20 @@ public class HashtagServiceImpl implements HashtagService {
                 try {
                     tag = hashtagRepo.save(
                             Hashtag.builder()
-                                    .name(name)
+                                    .name(hashtag)
                                     .usageCount(1)
                                     .build()
                     );
                 } catch (DataIntegrityViolationException e) {
-                    hashtagRepo.incrementUsage(name);
-                    tag = hashtagRepo.findByName(name).orElseThrow();
+                    hashtagRepo.incrementUsage(hashtag);
+                    tag = hashtagRepo.findByName(hashtag).orElseThrow();
                 }
             } else {
-                tag = hashtagRepo.findByName(name).orElseThrow();
+                tag = hashtagRepo.findByName(hashtag).orElseThrow();
             }
             results.add(tag);
         }
         return results;
     }
 
-    private String normalizeHashtag(String hashtag) {
-        if (hashtag == null) {
-            return null;
-        }
-        hashtag = hashtag.toLowerCase().trim();
-
-        if (hashtag.contains("#")) {
-            hashtag = hashtag.replace("#", "");
-        }
-        return hashtag;
-    }
 }

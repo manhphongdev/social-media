@@ -1,7 +1,6 @@
 package vn.socialmedia.dto.request;
 
 
-import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.*;
@@ -25,7 +24,6 @@ public class UpdateProfileRequest {
     private String bio;
 
     @Birthday(min = 12, max = 100, message = "Age must be between 12 and 100")
-    @JsonFormat(pattern = "dd-MM-yyyy")
     private LocalDate dateOfBirth;
 
     private Gender gender;
