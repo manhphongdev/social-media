@@ -1,6 +1,9 @@
 server:
   port: 8888
 
+frontend:
+  url: http://localhost:4200
+
 spring:
   application:
     name: Social-Media
@@ -25,6 +28,7 @@ spring:
         dialect: org.hibernate.dialect.MySQL8Dialect
         jdbc:
           time_zone: Asia/Ho_Chi_Minh
+
   servlet:
     multipart:
       enabled: true
@@ -77,7 +81,6 @@ jwt:
   refresh-token-secret: "Gu4jjMNk9oBnertRHqfRZJdHnz5jihbbnjAHeWNQbpg9"
   access-token-expiration: 360000000
   refresh-token-expiration: 360000000
-
 
 aws:
   access-key: ${AWS_ACCESS_KEY}

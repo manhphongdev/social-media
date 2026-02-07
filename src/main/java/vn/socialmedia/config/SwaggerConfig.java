@@ -1,4 +1,4 @@
-package vn.socialmedia.security.config;
+package vn.socialmedia.config;
 
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;

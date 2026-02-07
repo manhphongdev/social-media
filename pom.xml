@@ -24,6 +24,8 @@
     <properties>
         <mapstruct.version>1.5.5.Final</mapstruct.version>
         <java.version>21</java.version>
+        <swagger.version>2.5.0</swagger.version>
+        <jwt.version>0.12.6</jwt.version>
     </properties>
 
     <!--  AWS SDK BOM -->
@@ -109,25 +111,25 @@
         <dependency>
             <groupId>org.springdoc</groupId>
             <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
-            <version>2.5.0</version>
+            <version>${swagger.version}</version>
         </dependency>
 
         <!--JWT-->
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
             <artifactId>jjwt-api</artifactId>
-            <version>0.12.6</version>
+            <version>${jwt.version}</version>
         </dependency>
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
             <artifactId>jjwt-impl</artifactId>
-            <version>0.12.6</version>
+            <version>${jwt.version}</version>
             <scope>runtime</scope>
         </dependency>
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
             <artifactId>jjwt-jackson</artifactId>
-            <version>0.12.6</version>
+            <version>${jwt.version}</version>
             <scope>runtime</scope>
         </dependency>
 
@@ -204,8 +206,8 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.11.0</version>
                 <configuration>
-                    <source>17</source>
-                    <target>17</target>
+                    <source>21</source>
+                    <target>21</target>
                     <annotationProcessorPaths>
                         <path>
                             <groupId>org.projectlombok</groupId>

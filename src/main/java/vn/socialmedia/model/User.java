@@ -2,6 +2,7 @@ package vn.socialmedia.model;
 
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 import vn.socialmedia.enums.Gender;
 import vn.socialmedia.enums.UserStatus;
 
@@ -12,7 +13,7 @@ import java.util.Set;
 
 @Getter
 @Setter
-@Builder
+@SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity

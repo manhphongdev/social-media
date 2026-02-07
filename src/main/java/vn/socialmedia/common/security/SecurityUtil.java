@@ -3,10 +3,10 @@ package vn.socialmedia.common.security;
 import lombok.NoArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import vn.socialmedia.config.user.UserSecurity;
 import vn.socialmedia.enums.ErrorCode;
 import vn.socialmedia.exception.BusinessException;
 import vn.socialmedia.model.User;
-import vn.socialmedia.security.user.UserSecurity;
 
 @NoArgsConstructor
 public class SecurityUtil {

@@ -7,7 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.stereotype.Service;
-import vn.socialmedia.security.properties.JwtProperties;
+import vn.socialmedia.config.properties.JwtProperties;
 import vn.socialmedia.service.CookieService;
 
 import java.util.Arrays;

@@ -44,8 +44,10 @@ public enum ErrorCode {
     COMMENT_NOT_FOUND(6001, "Comment id %d not found in post id %d"),
 
     // User Error
-    USER_NOT_FOUND(6003, "User not found with id %d"),
-    ;
+    USER_NOT_FOUND(7001, "User not found with id %d"),
+
+    // Reaction Error
+    REACTION_NOT_FOUND(8001, "Reaction not found with postId %d, userId %d");
 
     private final int code;
     private final String message;

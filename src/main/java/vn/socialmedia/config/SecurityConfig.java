@@ -1,4 +1,4 @@
-package vn.socialmedia.security.config;
+package vn.socialmedia.config;
 
 
 import lombok.RequiredArgsConstructor;
@@ -20,8 +20,8 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import vn.socialmedia.security.filter.JwtAuthenticationFilter;
-import vn.socialmedia.security.service.CustomUserDetailsService;
+import vn.socialmedia.config.filter.JwtAuthenticationFilter;
+import vn.socialmedia.config.service.CustomUserDetailsService;
 
 import java.util.List;
 

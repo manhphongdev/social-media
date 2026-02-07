@@ -2,6 +2,7 @@ package vn.socialmedia.model;
 
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.Where;
 import vn.socialmedia.enums.PostPrivacy;
@@ -18,7 +19,7 @@ import static jakarta.persistence.CascadeType.PERSIST;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
+@SuperBuilder
 @SQLDelete(sql = "UPDATE posts SET is_deleted = true WHERE id = ?")
 @Where(clause = "is_deleted = false")
 public class Post extends AbstractEntity implements Serializable {

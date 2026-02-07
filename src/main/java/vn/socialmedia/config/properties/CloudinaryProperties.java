@@ -1,4 +1,4 @@
-package vn.socialmedia.security.properties;
+package vn.socialmedia.config.properties;
 
 import lombok.Getter;
 import lombok.Setter;

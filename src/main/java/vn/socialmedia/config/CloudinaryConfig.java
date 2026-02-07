@@ -1,11 +1,11 @@
-package vn.socialmedia.security.config;
+package vn.socialmedia.config;
 
 import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import vn.socialmedia.security.properties.CloudinaryProperties;
+import vn.socialmedia.config.properties.CloudinaryProperties;
 
 @Configuration
 @RequiredArgsConstructor

@@ -1,13 +1,13 @@
-package vn.socialmedia.security.service;
+package vn.socialmedia.config.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
+import vn.socialmedia.config.user.UserSecurity;
 import vn.socialmedia.model.User;
 import vn.socialmedia.repository.UserRepository;
-import vn.socialmedia.security.user.UserSecurity;
 
 @Service
 @RequiredArgsConstructor

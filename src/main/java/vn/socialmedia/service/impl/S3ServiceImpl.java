@@ -10,8 +10,8 @@ import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.ObjectCannedACL;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.S3Exception;
+import vn.socialmedia.config.properties.AWSProperties;
 import vn.socialmedia.enums.FolderName;
-import vn.socialmedia.security.properties.AWSProperties;
 import vn.socialmedia.service.CloudService;
 
 import java.io.IOException;

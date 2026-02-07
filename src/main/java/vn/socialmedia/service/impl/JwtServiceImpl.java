@@ -11,12 +11,12 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
+import vn.socialmedia.config.properties.JwtProperties;
 import vn.socialmedia.enums.TokenType;
 import vn.socialmedia.exception.JwtException;
 import vn.socialmedia.exception.TokenExpiredException;
 import vn.socialmedia.repository.RefreshTokenRepository;
 import vn.socialmedia.repository.UserRepository;
-import vn.socialmedia.security.properties.JwtProperties;
 import vn.socialmedia.service.JwtService;
 
 import javax.crypto.SecretKey;

@@ -1,4 +1,4 @@
-package vn.socialmedia.security.properties;
+package vn.socialmedia.config.properties;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Positive;
