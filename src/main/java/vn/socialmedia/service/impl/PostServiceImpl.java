@@ -87,6 +87,7 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
+    @Transactional
     public void deletePost(Long id) {
         Post post = postRepo.findById(id).orElseThrow(() -> new BusinessException(POST_NOT_FOUND, id));
 
@@ -125,7 +126,6 @@ public class PostServiceImpl implements PostService {
                 .commentCount(post.getComments().size())
                 .build();
     }
-
 
     @Override
     public boolean canViewPrivatePost(Post post) {
@@ -182,6 +182,4 @@ public class PostServiceImpl implements PostService {
         }
         return hashtag;
     }
-
-
 }

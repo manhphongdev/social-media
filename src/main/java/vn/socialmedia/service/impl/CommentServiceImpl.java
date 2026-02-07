@@ -14,12 +14,14 @@ import vn.socialmedia.model.User;
 import vn.socialmedia.repository.CommentRepository;
 import vn.socialmedia.repository.PostRepo;
 import vn.socialmedia.service.CommentService;
+import vn.socialmedia.service.PostService;
 
 @Service
 @Slf4j(topic = "COMMENT_SERVICE")
 @RequiredArgsConstructor
 public class CommentServiceImpl implements CommentService {
     private final CommentRepository commentRepository;
+    private final PostService postService;
     private final PostRepo postRepo;
     private final CommentMapper commentMapper;
 
@@ -29,6 +31,10 @@ public class CommentServiceImpl implements CommentService {
 
         Post post = postRepo.findById(request.getPostId()).orElseThrow(() ->
                 new BusinessException(ErrorCode.POST_NOT_FOUND, request.getPostId()));
+
+        if (!postService.canViewFriendOnlyPost(post) || !postService.canViewPrivatePost(post)) {
+            throw new BusinessException(ErrorCode.NO_ACCESS_POST, post.getId());
+        }
 
         Comment parent = new Comment();
         if (request.getCommentParentId() != null) {
