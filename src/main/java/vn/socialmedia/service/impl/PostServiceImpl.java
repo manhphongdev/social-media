@@ -101,13 +101,13 @@ public class PostServiceImpl implements PostService {
         Post post = postRepo.findById(id).orElseThrow(() -> new BusinessException(POST_NOT_FOUND, id));
 
         //case 1: privacy: private and user is owner
-        if (post.getPrivacy() == PRIVATE && !canViewPrivatePost(post)) {
-            throw new BusinessException(NO_ACCESS_POST);
+        if (post.getPrivacy() == PRIVATE && canViewPrivatePost(post)) {
+            throw new BusinessException(NO_ACCESS_POST, id);
         }
 
         //case 2: privacy: friend only and current user is one of followers of post owner
-        if (post.getPrivacy() == FRIENDS_ONLY && !canViewFriendOnlyPost(post)) {
-            throw new BusinessException(NO_ACCESS_POST);
+        if (post.getPrivacy() == FRIENDS_ONLY && canViewFriendOnlyPost(post)) {
+            throw new BusinessException(NO_ACCESS_POST, id);
         }
 
         return CRUDPostResponse.builder()
@@ -124,6 +124,18 @@ public class PostServiceImpl implements PostService {
                 .reactionCount(post.getReactions().size())
                 .commentCount(post.getComments().size())
                 .build();
+    }
+
+
+    @Override
+    public boolean canViewPrivatePost(Post post) {
+        return !post.getUser().equals(getCurrentUser());
+    }
+
+    @Override
+    public boolean canViewFriendOnlyPost(Post post) {
+        return !post.getUser().equals(getCurrentUser())
+                && !followRepo.isFollower(post.getUser().getId(), getCurrentUser().getId());
     }
 
     private Set<PostMedia> handlePostMediaUpload(MultipartFile[] files, Post post) {
@@ -147,15 +159,6 @@ public class PostServiceImpl implements PostService {
 
     private User getCurrentUser() {
         return userRepo.findById(Objects.requireNonNull(getUserId())).orElseThrow(() -> new BusinessException(USER_NOT_FOUND));
-    }
-
-    private boolean canViewPrivatePost(Post post) {
-        return post.getUser().equals(getCurrentUser());
-    }
-
-    private boolean canViewFriendOnlyPost(Post post) {
-        return post.getUser().equals(getCurrentUser())
-                || followRepo.isFollower(post.getUser().getId(), getCurrentUser().getId());
     }
 
     private Set<String> extractHashtags(String content) {

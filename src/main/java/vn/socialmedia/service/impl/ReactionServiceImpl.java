@@ -18,6 +18,7 @@ import vn.socialmedia.model.Reaction;
 import vn.socialmedia.model.User;
 import vn.socialmedia.repository.PostRepo;
 import vn.socialmedia.repository.ReactionRepo;
+import vn.socialmedia.service.PostService;
 import vn.socialmedia.service.ReactionService;
 
 import java.time.LocalDateTime;
@@ -31,6 +32,7 @@ public class ReactionServiceImpl implements ReactionService {
     private final ReactionRepo reactionRepo;
     private final PostRepo postRepo;
     private final ObjectMapper objectMapper;
+    private final PostService postService;
 
     @Override
     public void createOrUpdateReaction(CreateOrUpdateReactionRequest request) {
@@ -38,6 +40,10 @@ public class ReactionServiceImpl implements ReactionService {
                 new BusinessException(ErrorCode.POST_NOT_FOUND, request.getPostId()));
 
         User user = SecurityUtil.getUser();
+
+        if (!postService.canViewFriendOnlyPost(post) || !postService.canViewPrivatePost(post)) {
+            throw new BusinessException(ErrorCode.NO_ACCESS_POST, post.getId());
+        }
 
         Reaction reaction = reactionRepo.findByPostIdAndUserId(request.getPostId(), user.getId());
         if (reaction == null) {
@@ -72,6 +78,7 @@ public class ReactionServiceImpl implements ReactionService {
             String cursor,
             int limit
     ) {
+
         if (limit < 20) {
             limit = 20;
         }
