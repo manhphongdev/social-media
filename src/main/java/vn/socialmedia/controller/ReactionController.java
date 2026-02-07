@@ -27,8 +27,14 @@ public class ReactionController {
     public ResponseData<?> getReactions(
             @RequestParam Long postId,
             @RequestParam(required = false) String cursor,
-            @RequestParam(defaultValue = "3") int limit) {
+            @RequestParam(defaultValue = "20") int limit) {
         return new ResponseData<>(HttpStatus.OK.value(), "Get list reaction by post id successful",
                 reactionService.getReactionList(postId, cursor, limit));
+    }
+
+    @DeleteMapping
+    public ResponseData<?> unReaction(@RequestParam Long id) {
+        reactionService.deleteReaction(id);
+        return new ResponseData<>(HttpStatus.OK.value(), "Un-reaction successful");
     }
 }
