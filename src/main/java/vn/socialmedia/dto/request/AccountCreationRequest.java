@@ -14,6 +14,9 @@ import java.time.LocalDate;
 @Getter
 public class AccountCreationRequest {
 
+    @Size(min = 5, max = 100, message = "Username must be between 5 and 100 characters")
+    private String username;
+
     @Email
     private String email;
 

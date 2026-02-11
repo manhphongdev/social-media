@@ -8,6 +8,7 @@ import java.time.LocalDate;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record CRUDUserResponse(
+        String username,
         Long id,
         String name,
         String avatarUrl,

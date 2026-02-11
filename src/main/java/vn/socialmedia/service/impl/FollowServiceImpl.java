@@ -6,19 +6,23 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import vn.socialmedia.dto.response.CRUDUserResponse;
 import vn.socialmedia.enums.ErrorCode;
+import vn.socialmedia.enums.NotificationTargetType;
+import vn.socialmedia.enums.NotificationType;
 import vn.socialmedia.exception.BusinessException;
-import vn.socialmedia.exception.ResourceNotFoundException;
 import vn.socialmedia.model.Follow;
+import vn.socialmedia.model.Notification;
 import vn.socialmedia.model.User;
 import vn.socialmedia.repository.FollowRepo;
 import vn.socialmedia.repository.UserRepository;
 import vn.socialmedia.service.BlockService;
 import vn.socialmedia.service.FollowService;
+import vn.socialmedia.service.NotificationService;
 
 import java.util.List;
 import java.util.Objects;
 
-import static vn.socialmedia.common.security.SecurityUtil.getUserId;
+import static vn.socialmedia.common.security.SecurityUtil.getUser;
+
 
 @Service
 @Slf4j(topic = "FOLLOW_SERVICE")
@@ -27,16 +31,16 @@ public class FollowServiceImpl implements FollowService {
     private final FollowRepo followRepo;
     private final UserRepository userRepository;
     private final BlockService blockService;
+    private final NotificationService notificationService;
 
     @Override
     @Transactional
     public void follow(Long targetId) {
-        Long userId = getUserId();
 
-        User user = getUserById(userId);
+        User user = getUser();
 
         //check target user is not self
-        if (Objects.equals(userId, targetId)) {
+        if (Objects.equals(user.getId(), targetId)) {
             throw new BusinessException(ErrorCode.CANNOT_FOLLOW_BY_MYSELF);
         }
         // check target user exist
@@ -57,12 +61,21 @@ public class FollowServiceImpl implements FollowService {
                 .followee(targetUser)
                 .build());
 
-        //TODO send Notifications
+        Notification notification = Notification.builder()
+                .type(NotificationType.FOLLOW)
+                .text(user.getName() + " followed") //TODO fix message
+                .fromUser(user)
+                .user(targetUser)
+                .targetType(NotificationTargetType.USER)
+                .targetId(user.getId())
+                .build();
+
+        notificationService.sendToUser(targetUser.getUsername(), notification);
     }
 
     @Override
     public List<CRUDUserResponse> getFollowers(Long userId) {
-        User user = getUserById(userId);
+        User user = getUser();
 
         return user.getFollowers().stream()
                 .map(follow -> CRUDUserResponse.builder()
@@ -75,7 +88,8 @@ public class FollowServiceImpl implements FollowService {
 
     @Override
     public List<CRUDUserResponse> getFollowees(Long userId) {
-        User user = getUserById(userId);
+        User user = getUser();
+
         return user.getFollowers().stream()
                 .map(follow -> CRUDUserResponse.builder()
                         .id(follow.getFollowee().getId())
@@ -87,9 +101,9 @@ public class FollowServiceImpl implements FollowService {
 
     @Override
     public void unfollow(Long targetId) {
-        Long userId = getUserId();
-        User user = getUserById(userId);
-        User targerUser = getUserById(targetId);
+        User user = getUser();
+        User targerUser = userRepository.findById(targetId).orElseThrow(()
+                -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
         Follow follow = followRepo.getFollowByFollowerAndFollowee(user, targerUser)
                 .orElseThrow(() -> new BusinessException(ErrorCode.FOLLOWER_NOT_FOUND));
@@ -97,9 +111,4 @@ public class FollowServiceImpl implements FollowService {
         followRepo.delete(follow);
 
     }
-
-    private User getUserById(Long userId) {
-        return userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User not found"));
-    }
-
 }

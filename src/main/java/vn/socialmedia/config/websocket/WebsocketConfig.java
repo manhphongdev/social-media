@@ -1,4 +1,4 @@
-package vn.socialmedia.config;
+package vn.socialmedia.config.websocket;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
@@ -16,8 +16,8 @@ public class WebsocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
-        registry.addEndpoint("ws")
-                .setAllowedOrigins(frontEndUrl)
+        registry.addEndpoint("/ws")
+                .setAllowedOrigins(frontEndUrl, "http://localhost:3000", "http://localhost:4200", "http://127.0.0.1:5500")
                 .withSockJS();
     }
 
@@ -25,7 +25,8 @@ public class WebsocketConfig implements WebSocketMessageBrokerConfigurer {
     public void configureMessageBroker(MessageBrokerRegistry registry) {
         registry.setApplicationDestinationPrefixes("/app");
 
-        registry.enableSimpleBroker("/topic");
+        // Enable both /topic and /queue destinations
+        registry.enableSimpleBroker("/topic", "/queue");
     }
 
 }

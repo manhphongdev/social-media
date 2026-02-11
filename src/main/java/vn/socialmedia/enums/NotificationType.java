@@ -2,7 +2,7 @@ package vn.socialmedia.enums;
 
 public enum NotificationType {
     FOLLOW,
-    LIKE,
+    REACTION,
     COMMENT,
     MESSAGE,
     REPOST,

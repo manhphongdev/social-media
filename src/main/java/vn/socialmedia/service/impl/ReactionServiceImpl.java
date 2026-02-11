@@ -12,18 +12,24 @@ import vn.socialmedia.dto.response.CRUDUserResponse;
 import vn.socialmedia.dto.response.CursorResponse;
 import vn.socialmedia.dto.response.ReactionResponse;
 import vn.socialmedia.enums.ErrorCode;
+import vn.socialmedia.enums.NotificationTargetType;
+import vn.socialmedia.enums.NotificationType;
+import vn.socialmedia.enums.ReactionType;
 import vn.socialmedia.exception.BusinessException;
+import vn.socialmedia.model.Notification;
 import vn.socialmedia.model.Post;
 import vn.socialmedia.model.Reaction;
 import vn.socialmedia.model.User;
 import vn.socialmedia.repository.PostRepo;
 import vn.socialmedia.repository.ReactionRepo;
+import vn.socialmedia.service.NotificationService;
 import vn.socialmedia.service.PostService;
 import vn.socialmedia.service.ReactionService;
 
 import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -33,6 +39,7 @@ public class ReactionServiceImpl implements ReactionService {
     private final PostRepo postRepo;
     private final ObjectMapper objectMapper;
     private final PostService postService;
+    private final NotificationService notificationService;
 
     @Override
     public void createOrUpdateReaction(CreateOrUpdateReactionRequest request) {
@@ -41,7 +48,7 @@ public class ReactionServiceImpl implements ReactionService {
 
         User user = SecurityUtil.getUser();
 
-        if (!postService.canViewFriendOnlyPost(post) || !postService.canViewPrivatePost(post)) {
+        if (!postService.canViewFriendOnlyPost(post) && !postService.canViewPrivatePost(post)) {
             throw new BusinessException(ErrorCode.NO_ACCESS_POST, post.getId());
         }
 
@@ -56,7 +63,21 @@ public class ReactionServiceImpl implements ReactionService {
             reaction.setType(request.getReactionType());
         }
         reactionRepo.save(reaction);
-        //TODO send notification
+
+        if (Objects.equals(user.getId(), post.getUser().getId())) {
+            return;
+        }
+
+        Notification notification = Notification.builder()
+                .fromUser(user)
+                .user(post.getUser())
+                .type(NotificationType.REACTION)
+                .text(user.getName() + " " + getMessageFollowType(request.getReactionType()) + " the post")
+                .targetType(NotificationTargetType.POST)
+                .targetId(post.getId())
+                .build();
+
+        notificationService.sendToUser(user.getUsername(), notification);
     }
 
     @Override
@@ -150,5 +171,16 @@ public class ReactionServiceImpl implements ReactionService {
         } catch (Exception e) {
             throw new RuntimeException("Decode cursor failed", e);
         }
+    }
+
+    private String getMessageFollowType(ReactionType type) {
+        return switch (type) {
+            case LIKE -> "liked";
+            case LOVE -> "loved";
+            case HAHA -> "laughed";
+            case ANGRY -> "reacted angrily";
+            case SAD -> "reacted sadly";
+            case WOW -> "wowed";
+        };
     }
 }

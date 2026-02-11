@@ -11,14 +11,16 @@ import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.Set;
 
-@Getter
-@Setter
+@EqualsAndHashCode(callSuper = true)
 @SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
+@Data
 @Table(name = "users")
 public class User extends AbstractEntity implements Serializable {
+    @Column(nullable = false, length = 100)
+    private String username;
 
     @Column(nullable = false, length = 100)
     private String name;

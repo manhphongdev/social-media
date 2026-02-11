@@ -1,6 +1,7 @@
 package vn.socialmedia.common.security;
 
 import lombok.NoArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import vn.socialmedia.config.user.UserSecurity;
@@ -8,23 +9,9 @@ import vn.socialmedia.enums.ErrorCode;
 import vn.socialmedia.exception.BusinessException;
 import vn.socialmedia.model.User;
 
+@Slf4j
 @NoArgsConstructor
 public class SecurityUtil {
-
-    public static Long getUserId() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-
-        if (authentication == null || !authentication.isAuthenticated()) {
-            return null;
-        }
-
-        Object principal = authentication.getPrincipal();
-
-        if (principal instanceof UserSecurity(User user)) {
-            return user.getId();
-        }
-        return null;
-    }
 
     public static User getUser() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
@@ -33,6 +20,5 @@ public class SecurityUtil {
         }
         return ((UserSecurity) auth.getPrincipal()).user();
     }
-
 
 }

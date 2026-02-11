@@ -51,6 +51,5 @@ public class FollowController {
         log.info("Request unfollow user, id: {}", longId);
         followService.unfollow(longId);
         return new ResponseData<>(HttpStatus.OK.value(), "Unfollow user successfully");
-
     }
 }

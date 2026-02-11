@@ -19,7 +19,6 @@ import vn.socialmedia.model.PostMedia;
 import vn.socialmedia.model.User;
 import vn.socialmedia.repository.FollowRepo;
 import vn.socialmedia.repository.PostRepo;
-import vn.socialmedia.repository.UserRepository;
 import vn.socialmedia.service.CloudService;
 import vn.socialmedia.service.HashtagService;
 import vn.socialmedia.service.PostService;
@@ -29,7 +28,7 @@ import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static vn.socialmedia.common.security.SecurityUtil.getUserId;
+import static vn.socialmedia.common.security.SecurityUtil.getUser;
 import static vn.socialmedia.enums.ErrorCode.*;
 import static vn.socialmedia.enums.PostPrivacy.FRIENDS_ONLY;
 import static vn.socialmedia.enums.PostPrivacy.PRIVATE;
@@ -39,7 +38,6 @@ import static vn.socialmedia.enums.PostPrivacy.PRIVATE;
 @Slf4j(topic = "POST_SERVICE")
 public class PostServiceImpl implements PostService {
     private final PostRepo postRepo;
-    private final UserRepository userRepo;
     private final HashtagService hashtagService;
     private final CloudService cloudService;
     private final FollowRepo followRepo;
@@ -65,8 +63,7 @@ public class PostServiceImpl implements PostService {
     @Transactional
     public void createPost(PostCreationRequest request, MultipartFile[] files) {
 
-        User user = userRepo.findById(Objects.requireNonNull(getUserId())).orElseThrow(() ->
-                new BusinessException(USER_NOT_FOUND, getUserId()));
+        User user = getUser();
 
         Set<String> hashtags = extractHashtags(request.getText());
 
@@ -78,6 +75,7 @@ public class PostServiceImpl implements PostService {
                 .hashtags(normalizedTags)
                 .privacy(request.getPrivacy())
                 .build();
+
         if (files != null) {
             Set<PostMedia> medias;
             medias = handlePostMediaUpload(files, post);
@@ -91,7 +89,7 @@ public class PostServiceImpl implements PostService {
     public void deletePost(Long id) {
         Post post = postRepo.findById(id).orElseThrow(() -> new BusinessException(POST_NOT_FOUND, id));
 
-        if (!post.getUser().equals(getCurrentUser())) {
+        if (!post.getUser().getId().equals(getUser().getId())) {
             throw new BusinessException(NO_PERMISSION);
         }
         postRepo.delete(post);
@@ -129,13 +127,17 @@ public class PostServiceImpl implements PostService {
 
     @Override
     public boolean canViewPrivatePost(Post post) {
-        return !post.getUser().equals(getCurrentUser());
+        Long ownerId = post.getUser().getId();
+        Long viewerId = getUser().getId();
+        return Objects.equals(ownerId, viewerId);
     }
 
     @Override
     public boolean canViewFriendOnlyPost(Post post) {
-        return !post.getUser().equals(getCurrentUser())
-                && !followRepo.isFollower(post.getUser().getId(), getCurrentUser().getId());
+        Long ownerId = post.getUser().getId();
+        Long viewerId = getUser().getId();
+        return Objects.equals(ownerId, viewerId)
+                || followRepo.isFollower(ownerId, viewerId);
     }
 
     private Set<PostMedia> handlePostMediaUpload(MultipartFile[] files, Post post) {
@@ -155,10 +157,6 @@ public class PostServiceImpl implements PostService {
         return Optional.ofNullable(uploadStrategies.get(mediaType))
                 .orElseThrow(() -> new IllegalArgumentException("Unsupported media type"))
                 .apply(file);
-    }
-
-    private User getCurrentUser() {
-        return userRepo.findById(Objects.requireNonNull(getUserId())).orElseThrow(() -> new BusinessException(USER_NOT_FOUND));
     }
 
     private Set<String> extractHashtags(String content) {

@@ -16,5 +16,4 @@ public interface PostService {
     boolean canViewPrivatePost(Post post);
 
     boolean canViewFriendOnlyPost(Post post);
-
 }

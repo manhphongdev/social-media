@@ -56,7 +56,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                             req.getPassword()));
 
             //load userdetail after authenticate success
-            UserDetails userDetails = userDetailsService.loadUserByUsername(req.getEmail());
+            UserDetails userDetails = (UserDetails) authentication.getPrincipal();
             //b2 create access/refresh token
             String accessToken = jwtService.generateAccessToken(userDetails);
             String refreshToken = jwtService.generateRefreshToken(userDetails);
@@ -68,7 +68,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                     .isAuthenticate(true)
                     .build();
         } catch (AuthenticationException e) {
-            log.error("Invalid email or password, email: {} ", req.getEmail());
+            log.error("Invalid username or password, email: {} ", req.getEmail());
             throw new InvalidCredentialsException("Invalid email or password");
         }
     }
@@ -79,19 +79,24 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         if (userRepository.findByEmail(req.getEmail()).isPresent()) {
             throw new BusinessException(ErrorCode.Email_Already_Exist);
         }
+
+        if (userRepository.existsByUsername(req.getUsername())) {
+            throw new BusinessException(ErrorCode.USERNAME_ALREADY_EXIST);
+        }
+
         if (!req.getPassword().equals(req.getConfirmPassword())) {
             throw new BusinessException(ErrorCode.Password_And_Re_Password_Not_Match);
         }
         log.info("Register account with email {}", req.getEmail());
 
-
         userRepository.save(User.builder()
+                .username(req.getUsername())
                 .email(req.getEmail())
                 .password(passwordEncoder.encode(req.getPassword()))
                 .name(req.getName())
                 .gender(req.getGender())
                 .dateOfBirth(req.getDateOfBirth())
-                .roles(Set.of())
+                .roles(Set.of()) //TODO add role default
                 .status(UserStatus.ACTIVE)
                 .build());
     }
@@ -102,7 +107,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         String token = cookieService.getRefreshToken(req)
                 .orElseThrow(() -> new BusinessException(ErrorCode.REFRESH_TOKEN_NOT_FOUND_IN_COOKIE));
 
-        if (!jwtService.isTokenValid(token, TokenType.REFRESH_TOKEN)) {
+        if (jwtService.isTokenValid(token, TokenType.REFRESH_TOKEN)) {
             throw new InvalidTokenException("Invalid refresh token");
         }
 
@@ -136,12 +141,10 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                         .jid(jwtService.extractId(token, TokenType.REFRESH_TOKEN))
                         .expiresAt(jwtService.extractExpiration(token, TokenType.REFRESH_TOKEN).toInstant())
                         .build());
-                //TODO delete refreshToken in Cookie
             } catch (Exception e) {
                 log.warn("Token invalid or expired during logout: {}", e.getMessage());
             }
         }
         cookieService.removeRefreshToken(httpResponse);
     }
-
 }

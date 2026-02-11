@@ -16,7 +16,6 @@ import java.io.Serializable;
 @Builder
 public class Notification extends AbstractEntity implements Serializable {
 
-    @Column(nullable = false, columnDefinition = "TEXT")
     private String text;
 
     @Enumerated(EnumType.STRING)

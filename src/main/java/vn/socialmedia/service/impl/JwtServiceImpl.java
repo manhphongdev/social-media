@@ -80,6 +80,7 @@ public class JwtServiceImpl implements JwtService {
             return notExpired && issuerMatches;
 
         } catch (Exception ex) {
+            log.error("Token validation failed: {}", ex.getMessage());
             return false;
         }
     }

@@ -21,6 +21,7 @@ public enum ErrorCode {
     INVALID_REFRESH_TOKEN(2004, "Invalid refresh token"),
     UNAUTHENTICATED(2005, "Unauthenticated"),
     NO_PERMISSION(HttpStatus.FORBIDDEN.value(), "No Permission"),
+    USERNAME_ALREADY_EXIST(2006, "User name already exist"),
 
     //Error Upload File
     UPLOAD_FILE_FAILED(3001, "Upload File Failed"),
@@ -38,7 +39,7 @@ public enum ErrorCode {
 
     // Post Error
     POST_NOT_FOUND(5001, "Post not found with id %d"),
-    NO_ACCESS_POST(5002, "No access to the post, id: %d"),
+    NO_ACCESS_POST(5002, "No access permission of the post, id: %d"),
 
     // Comment Error
     COMMENT_NOT_FOUND(6001, "Comment id %d not found in post id %d"),

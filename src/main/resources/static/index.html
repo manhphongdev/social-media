@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>WebSocket Test</title>
+
+    <!-- SockJS -->
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <!-- STOMP -->
+    <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+</head>
+<body>
+
+<h2>WebSocket Notifications Test</h2>
+
+<label>
+    Email (principal):
+    <input id="email" type="email" value="user@gmail.com" />
+</label>
+<button onclick="connect()">Connect & Subscribe</button>
+<br><br>
+
+<input id="message" placeholder="Send echo to /topic/notifications" type="text"/>
+<button onclick="sendMessage()">Send</button>
+
+<ul id="messages"></ul>
+
+<script>
+    let stompClient = null;
+
+    function connect() {
+        const email = document.getElementById('email').value || 'user@gmail.com';
+
+        // Nếu backend đã xác thực qua cookie/token, chỉ cần kết nối và subscribe /user/queue/notifications.
+        const socket = new SockJS('http://localhost:8888/ws');
+        stompClient = Stomp.over(socket);
+
+        // Nếu cần gửi header (ví dụ Authorization) thì thêm vào connectHeaders.
+        const connectHeaders = {
+            login: email // Spring sẽ dùng Principal#getName (thường là email) để định tuyến user destination
+        };
+
+        stompClient.connect(connectHeaders, function (frame) {
+            console.log('Connected: ' + frame);
+
+            // Subscribe đích user queue để nhận riêng cho user@gmail.com
+            stompClient.subscribe('/user/queue/notifications', function (msg) {
+                console.log(msg.body);
+                showMessage('Notification: ' + msg.body);
+            });
+
+            // Topic chung (để test echo)
+            stompClient.subscribe('/topic/notifications', function (msg) {
+                console.log(msg.body);
+                showMessage('Topic: ' + msg.body);
+            });
+        });
+    }
+
+    function sendMessage() {
+        const msg = document.getElementById('message').value;
+        stompClient.send("/app/chat.send", {}, msg);
+    }
+
+    function showMessage(message) {
+        const li = document.createElement("li");
+        li.innerText = message;
+        document.getElementById("messages").appendChild(li);
+    }
+</script>
+
+</body>
+</html>
