@@ -1,4 +1,4 @@
-package vn.socialmedia.helpers;
+package vn.socialmedia.common.helpers;
 
 import lombok.experimental.UtilityClass;
 import org.apache.tika.Tika;

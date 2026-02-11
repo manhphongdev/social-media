@@ -1,15 +1,14 @@
 package vn.socialmedia.service.impl;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import vn.socialmedia.common.security.SecurityUtil;
 import vn.socialmedia.dto.request.CreateOrUpdateReactionRequest;
-import vn.socialmedia.dto.request.ReactionCursorRequest;
+import vn.socialmedia.dto.request.CursorPageRequest;
 import vn.socialmedia.dto.response.CRUDUserResponse;
-import vn.socialmedia.dto.response.CursorResponse;
+import vn.socialmedia.dto.response.CursorPageResponse;
 import vn.socialmedia.dto.response.ReactionResponse;
 import vn.socialmedia.enums.ErrorCode;
 import vn.socialmedia.enums.NotificationTargetType;
@@ -27,9 +26,11 @@ import vn.socialmedia.service.PostService;
 import vn.socialmedia.service.ReactionService;
 
 import java.time.LocalDateTime;
-import java.util.Base64;
 import java.util.List;
 import java.util.Objects;
+
+import static vn.socialmedia.common.helpers.CursorPageHelper.decodeCursor;
+import static vn.socialmedia.common.helpers.CursorPageHelper.encodeCursor;
 
 @Service
 @RequiredArgsConstructor
@@ -37,7 +38,6 @@ import java.util.Objects;
 public class ReactionServiceImpl implements ReactionService {
     private final ReactionRepo reactionRepo;
     private final PostRepo postRepo;
-    private final ObjectMapper objectMapper;
     private final PostService postService;
     private final NotificationService notificationService;
 
@@ -94,7 +94,7 @@ public class ReactionServiceImpl implements ReactionService {
     }
 
     @Override
-    public CursorResponse<ReactionResponse> getReactionList(
+    public CursorPageResponse<ReactionResponse> getReactionList(
             Long postId,
             String cursor,
             int limit
@@ -108,9 +108,9 @@ public class ReactionServiceImpl implements ReactionService {
         Long lastReactionId = null;
 
         if (cursor != null) {
-            ReactionCursorRequest decoded = decodeCursor(cursor);
+            CursorPageRequest decoded = decodeCursor(cursor);
             lastCreatedAt = decoded.getLastCreatedAt();
-            lastReactionId = decoded.getLastReactionId();
+            lastReactionId = decoded.getLastId();
         }
 
         List<Reaction> reactions = reactionRepo.getReactionListOfPost(
@@ -140,37 +140,18 @@ public class ReactionServiceImpl implements ReactionService {
         if (hasNext && !reactions.isEmpty()) {
             Reaction last = reactions.getLast();
             nextCursor = encodeCursor(
-                    ReactionCursorRequest.builder()
+                    CursorPageRequest.builder()
                             .lastCreatedAt(last.getCreatedAt())
-                            .lastReactionId(last.getId())
+                            .lastId(last.getId())
                             .build()
             );
         }
 
-        return CursorResponse.<ReactionResponse>builder()
+        return CursorPageResponse.<ReactionResponse>builder()
                 .content(content)
                 .hasNext(hasNext)
                 .nextCursor(nextCursor)
                 .build();
-    }
-
-
-    public String encodeCursor(ReactionCursorRequest cursor) {
-        try {
-            byte[] bytes = objectMapper.writeValueAsBytes(cursor);
-            return Base64.getUrlEncoder().encodeToString(bytes);
-        } catch (Exception e) {
-            throw new RuntimeException("Encode cursor failed", e);
-        }
-    }
-
-    private ReactionCursorRequest decodeCursor(String cursor) {
-        try {
-            byte[] bytes = Base64.getUrlDecoder().decode(cursor);
-            return objectMapper.readValue(bytes, ReactionCursorRequest.class);
-        } catch (Exception e) {
-            throw new RuntimeException("Decode cursor failed", e);
-        }
     }
 
     private String getMessageFollowType(ReactionType type) {

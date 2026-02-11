@@ -9,8 +9,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class ReactionCursorRequest {
-    private Long postId;
+public class CursorPageRequest {
     private LocalDateTime lastCreatedAt;
-    private Long lastReactionId;
+    private Long lastId;
 }

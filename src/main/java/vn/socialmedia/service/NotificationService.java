@@ -1,5 +1,6 @@
 package vn.socialmedia.service;
 
+import vn.socialmedia.dto.response.CursorPageResponse;
 import vn.socialmedia.dto.response.NotificationResponse;
 import vn.socialmedia.model.Notification;
 
@@ -13,7 +14,7 @@ public interface NotificationService {
 
     void sendToUsers(List<String> usernames, Notification notification);
 
-    List<NotificationResponse> getNotifications(Long userId);
+    CursorPageResponse<NotificationResponse> getNotifications(String cursor, int limit);
 
     List<NotificationResponse> getUnReadNotifications(Long userId);
 

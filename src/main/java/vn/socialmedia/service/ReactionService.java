@@ -2,7 +2,7 @@ package vn.socialmedia.service;
 
 
 import vn.socialmedia.dto.request.CreateOrUpdateReactionRequest;
-import vn.socialmedia.dto.response.CursorResponse;
+import vn.socialmedia.dto.response.CursorPageResponse;
 import vn.socialmedia.dto.response.ReactionResponse;
 
 public interface ReactionService {
@@ -10,5 +10,5 @@ public interface ReactionService {
 
     void deleteReaction(Long postId);
 
-    CursorResponse<ReactionResponse> getReactionList(Long postId, String cursor, int limit);
+    CursorPageResponse<ReactionResponse> getReactionList(Long postId, String cursor, int limit);
 }

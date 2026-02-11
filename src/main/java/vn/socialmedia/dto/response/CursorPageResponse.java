@@ -11,7 +11,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class CursorResponse<T> {
+public class CursorPageResponse<T> {
     private List<T> content;
     private String nextCursor;
     private boolean hasNext;

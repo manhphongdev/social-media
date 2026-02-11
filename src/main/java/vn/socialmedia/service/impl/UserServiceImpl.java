@@ -17,7 +17,7 @@ import vn.socialmedia.repository.UserRepository;
 import vn.socialmedia.service.CloudService;
 import vn.socialmedia.service.UserService;
 
-import static vn.socialmedia.helpers.FileHelper.validateImage;
+import static vn.socialmedia.common.helpers.FileHelper.validateImage;
 
 @Service
 @RequiredArgsConstructor
