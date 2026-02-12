@@ -16,6 +16,9 @@ public interface NotificationService {
 
     CursorPageResponse<NotificationResponse> getNotifications(String cursor, int limit);
 
-    List<NotificationResponse> getUnReadNotifications(Long userId);
+    CursorPageResponse<NotificationResponse> getUnReadNotifications(String cursor, int limit);
 
+    Integer getUnreadCount();
+
+    void markAsRead(Long id);
 }

@@ -17,7 +17,7 @@ public class WebsocketConfig implements WebSocketMessageBrokerConfigurer {
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         registry.addEndpoint("/ws")
-                .setAllowedOrigins(frontEndUrl, "http://localhost:3000", "http://localhost:4200", "http://127.0.0.1:5500")
+                .setAllowedOrigins(frontEndUrl, "http://localhost:3000", "http://localhost:4200")
                 .withSockJS();
     }
 
@@ -28,5 +28,4 @@ public class WebsocketConfig implements WebSocketMessageBrokerConfigurer {
         // Enable both /topic and /queue destinations
         registry.enableSimpleBroker("/topic", "/queue");
     }
-
 }

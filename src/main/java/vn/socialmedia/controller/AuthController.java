@@ -27,16 +27,16 @@ public class AuthController {
 
     @PostMapping("/login") //checked
     public ResponseData<TokenResponse> login(@Valid @RequestBody LoginRequest req, HttpServletResponse httpResponse) {
-        log.info("Login Request: {}", req.getEmail());
+        log.info("Login Request: {}", req.getUsername());
 
-        return new ResponseData<>(HttpStatus.OK.value(), "Login successful", authenticationService.login(req, httpResponse));
+        return new ResponseData<>(HttpStatus.OK.value(), "Login successfully", authenticationService.login(req, httpResponse));
     }
 
     @PostMapping("/logout")
     public ResponseData<?> logout(HttpServletRequest httpRequest, HttpServletResponse httpResponse) {
         log.info("Logout Request");
         authenticationService.logout(httpRequest, httpResponse);
-        return new ResponseData<>(HttpStatus.OK.value(), "Logout successful");
+        return new ResponseData<>(HttpStatus.OK.value(), "Logout successfully");
     }
 
     @PostMapping("/register") //checked
@@ -49,6 +49,7 @@ public class AuthController {
     @PostMapping("/refresh-token")  //checked
     public ResponseData<?> refreshToken(HttpServletRequest request) {
         log.info("Refresh token request");
-        return new ResponseData<>(HttpStatus.OK.value(), "Refresh successful", authenticationService.refreshToken(request));
+        return new ResponseData<>(HttpStatus.OK.value(), "Refresh successfully",
+                authenticationService.refreshToken(request));
     }
 }

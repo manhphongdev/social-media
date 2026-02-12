@@ -52,7 +52,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         try {
             //b1 verify email/password
             Authentication authentication = authenticationManager
-                    .authenticate(new UsernamePasswordAuthenticationToken(req.getEmail(),
+                    .authenticate(new UsernamePasswordAuthenticationToken(req.getUsername(),
                             req.getPassword()));
 
             //load userdetail after authenticate success
@@ -68,8 +68,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                     .isAuthenticate(true)
                     .build();
         } catch (AuthenticationException e) {
-            log.error("Invalid username or password, email: {} ", req.getEmail());
-            throw new InvalidCredentialsException("Invalid email or password");
+            log.error("Invalid username or password, username: {} ", req.getUsername());
+            throw new InvalidCredentialsException("Invalid username or password");
         }
     }
 

@@ -48,7 +48,10 @@ public enum ErrorCode {
     USER_NOT_FOUND(7001, "User not found with id %d"),
 
     // Reaction Error
-    REACTION_NOT_FOUND(8001, "Reaction not found with postId %d, userId %d");
+    REACTION_NOT_FOUND(8001, "Reaction not found with postId %d, userId %d"),
+
+    //Notification Error
+    NOTIFICATION_NOT_FOUND(8001, "Notification not found with id %d");
 
     private final int code;
     private final String message;

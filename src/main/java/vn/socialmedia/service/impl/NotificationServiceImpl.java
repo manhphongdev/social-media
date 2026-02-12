@@ -4,18 +4,20 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.messaging.simp.SimpMessageSendingOperations;
 import org.springframework.stereotype.Service;
+import vn.socialmedia.common.helpers.CursorPageHelper;
 import vn.socialmedia.dto.request.CursorPageRequest;
 import vn.socialmedia.dto.response.CursorPageResponse;
 import vn.socialmedia.dto.response.NotificationResponse;
+import vn.socialmedia.enums.ErrorCode;
+import vn.socialmedia.exception.BusinessException;
 import vn.socialmedia.model.Notification;
+import vn.socialmedia.model.User;
 import vn.socialmedia.repository.NotificationRepo;
 import vn.socialmedia.service.NotificationService;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
-import static vn.socialmedia.common.helpers.CursorPageHelper.decodeCursor;
-import static vn.socialmedia.common.helpers.CursorPageHelper.encodeCursor;
 import static vn.socialmedia.common.security.SecurityUtil.getUser;
 
 @Service
@@ -24,18 +26,21 @@ public class NotificationServiceImpl implements NotificationService {
 
     private final SimpMessageSendingOperations messagingTemplate;
     private final NotificationRepo notificationRepo;
+    private final CursorPageHelper cursorPageHelper;
 
     @Override
     public void broadcastNotification(Notification notification) {
         if (notification != null) {
             notificationRepo.save(notification);
             NotificationResponse notificationResponse = NotificationResponse.builder()
+                    .id(notification.getId())
                     .targetId(notification.getTargetId())
                     .type(notification.getType())
                     .targetType(notification.getTargetType())
                     .fromUser(notification.getFromUser().getId())
                     .text(notification.getText())
                     .isRead(notification.getIsRead())
+                    .createdAt(notification.getCreatedAt())
                     .build();
             messagingTemplate.convertAndSend("/topic/public/notifications", notificationResponse);
         }
@@ -48,12 +53,14 @@ public class NotificationServiceImpl implements NotificationService {
         if (notification != null) {
             notificationRepo.save(notification);
             NotificationResponse notificationResponse = NotificationResponse.builder()
+                    .id(notification.getId())
                     .targetId(notification.getTargetId())
                     .type(notification.getType())
                     .targetType(notification.getTargetType())
                     .fromUser(notification.getFromUser().getId())
                     .text(notification.getText())
                     .isRead(notification.getIsRead())
+                    .createdAt(notification.getCreatedAt())
                     .build();
             messagingTemplate.convertAndSendToUser(toUsername, "/queue/notifications", notificationResponse);
         }
@@ -68,15 +75,12 @@ public class NotificationServiceImpl implements NotificationService {
     @Override
     public CursorPageResponse<NotificationResponse> getNotifications(String cursor,
                                                                      int limit) {
-        if (limit < 20) {
-            limit = 20;
-        }
 
         LocalDateTime lastCreatedAt = null;
         Long lastId = null;
 
         if (cursor != null) {
-            CursorPageRequest decoded = decodeCursor(cursor);
+            CursorPageRequest decoded = cursorPageHelper.decodeCursor(cursor);
             lastCreatedAt = decoded.getLastCreatedAt();
             lastId = decoded.getLastId();
         }
@@ -93,11 +97,13 @@ public class NotificationServiceImpl implements NotificationService {
 
         List<NotificationResponse> notificationResponses = notifications.stream()
                 .map(notification -> NotificationResponse.builder()
+                        .id(notification.getId())
                         .text(notification.getText())
                         .type(notification.getType())
                         .targetType(notification.getTargetType())
                         .targetId(notification.getTargetId())
                         .isRead(notification.getIsRead())
+                        .createdAt(notification.getCreatedAt())
                         .build())
                 .toList();
 
@@ -105,7 +111,7 @@ public class NotificationServiceImpl implements NotificationService {
 
         if (hasNext) {
             Notification notificationLast = notifications.getLast();
-            nextCursor = encodeCursor(CursorPageRequest
+            nextCursor = cursorPageHelper.encodeCursor(CursorPageRequest
                     .builder()
                     .lastCreatedAt(notificationLast.getCreatedAt())
                     .lastId(notificationLast.getId())
@@ -120,8 +126,70 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
-    public List<NotificationResponse> getUnReadNotifications(Long userId) {
-        notificationRepo.findByUser_IdAndIsReadIsFalse(userId);
-        return List.of();
+    public CursorPageResponse<NotificationResponse> getUnReadNotifications(String cursor, int limit) {
+
+        LocalDateTime lastCreatedAt = null;
+        Long lastId = null;
+
+        if (cursor != null) {
+            CursorPageRequest decoded = cursorPageHelper.decodeCursor(cursor);
+            lastCreatedAt = decoded.getLastCreatedAt();
+            lastId = decoded.getLastId();
+        }
+
+        List<Notification> notifications = notificationRepo.getUnread(getUser().getId(),
+                lastCreatedAt,
+                lastId,
+                PageRequest.of(0, limit + 1));
+
+        boolean hasNext = notifications.size() > limit;
+        if (hasNext) {
+            notifications = notifications.subList(0, limit);
+        }
+
+        List<NotificationResponse> notificationResponses = notifications.stream()
+                .map(notification -> NotificationResponse.builder()
+                        .id(notification.getId())
+                        .text(notification.getText())
+                        .type(notification.getType())
+                        .targetType(notification.getTargetType())
+                        .targetId(notification.getTargetId())
+                        .isRead(notification.getIsRead())
+                        .build())
+                .toList();
+
+        String nextCursor = null;
+
+        if (hasNext) {
+            Notification notificationLast = notifications.getLast();
+            nextCursor = cursorPageHelper.encodeCursor(CursorPageRequest
+                    .builder()
+                    .lastCreatedAt(notificationLast.getCreatedAt())
+                    .lastId(notificationLast.getId())
+                    .build()
+            );
+        }
+        return CursorPageResponse.<NotificationResponse>builder()
+                .content(notificationResponses)
+                .nextCursor(nextCursor)
+                .hasNext(hasNext)
+                .build();
+    }
+
+    @Override
+    public Integer getUnreadCount() {
+        User user = getUser();
+        return notificationRepo.countNotificationByUserIdAndIsReadFalse(user.getId());
+    }
+
+    @Override
+    public void markAsRead(Long id) {
+        Notification notification = notificationRepo.findById(id).orElseThrow(()
+                -> new BusinessException(ErrorCode.NOTIFICATION_NOT_FOUND, id));
+        if (Boolean.TRUE.equals(notification.getIsRead())) {
+            return;
+        }
+        notification.setIsRead(true);
+        notificationRepo.save(notification);
     }
 }

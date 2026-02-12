@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
+import vn.socialmedia.common.helpers.CursorPageHelper;
 import vn.socialmedia.common.security.SecurityUtil;
 import vn.socialmedia.dto.request.CreateOrUpdateReactionRequest;
 import vn.socialmedia.dto.request.CursorPageRequest;
@@ -29,8 +30,6 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
 
-import static vn.socialmedia.common.helpers.CursorPageHelper.decodeCursor;
-import static vn.socialmedia.common.helpers.CursorPageHelper.encodeCursor;
 
 @Service
 @RequiredArgsConstructor
@@ -40,6 +39,7 @@ public class ReactionServiceImpl implements ReactionService {
     private final PostRepo postRepo;
     private final PostService postService;
     private final NotificationService notificationService;
+    private final CursorPageHelper cursorPageHelper;
 
     @Override
     public void createOrUpdateReaction(CreateOrUpdateReactionRequest request) {
@@ -108,7 +108,7 @@ public class ReactionServiceImpl implements ReactionService {
         Long lastReactionId = null;
 
         if (cursor != null) {
-            CursorPageRequest decoded = decodeCursor(cursor);
+            CursorPageRequest decoded = cursorPageHelper.decodeCursor(cursor);
             lastCreatedAt = decoded.getLastCreatedAt();
             lastReactionId = decoded.getLastId();
         }
@@ -139,7 +139,7 @@ public class ReactionServiceImpl implements ReactionService {
         String nextCursor = null;
         if (hasNext && !reactions.isEmpty()) {
             Reaction last = reactions.getLast();
-            nextCursor = encodeCursor(
+            nextCursor = cursorPageHelper.encodeCursor(
                     CursorPageRequest.builder()
                             .lastCreatedAt(last.getCreatedAt())
                             .lastId(last.getId())

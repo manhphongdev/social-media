@@ -12,7 +12,6 @@ import java.util.List;
 
 @Repository
 public interface NotificationRepo extends JpaRepository<Notification, Long> {
-    List<Notification> findByUser_IdAndIsReadIsFalse(Long userId);
 
     @Query("""
             select n
@@ -34,4 +33,26 @@ public interface NotificationRepo extends JpaRepository<Notification, Long> {
             Pageable pageable
     );
 
+    @Query("""
+            select n
+            from Notification n
+            where n.user.id = :userId
+              and n.isRead =false
+              and (
+                     :createdAt is null
+                     or (
+                          n.createdAt < :createdAt
+                          or (n.createdAt = :createdAt and n.id < :id)
+                        )
+                  )
+            order by n.createdAt desc, n.id desc
+            """)
+    List<Notification> getUnread(
+            @Param("userId") Long userId,
+            @Param("createdAt") LocalDateTime createdAt,
+            @Param("id") Long id,
+            Pageable pageable
+    );
+
+    Integer countNotificationByUserIdAndIsReadFalse(Long userId);
 }
