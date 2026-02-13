@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import vn.socialmedia.dto.request.PostCreationRequest;
 import vn.socialmedia.dto.response.CRUDPostResponse;
+import vn.socialmedia.dto.response.CursorPageResponse;
 import vn.socialmedia.dto.response.ResponseData;
 import vn.socialmedia.service.PostService;
 
@@ -95,4 +96,37 @@ public class PostController {
         return new ResponseData<>(HttpStatus.OK.value(), "Post found successfully", post);
     }
 
+    @Operation(
+            summary = "Get posts with cursor-based pagination",
+            description = """
+                    This API retrieves posts using cursor-based pagination for infinite scrolling.
+                    - Supports optional cursor parameter for pagination
+                    - Default limit is 10 posts per page
+                    - Returns posts from followed users and public posts
+                    """,
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "Posts retrieved successfully"
+                    ),
+                    @ApiResponse(
+                            responseCode = "400",
+                            description = "Invalid cursor or limit",
+                            content = @Content
+                    ),
+                    @ApiResponse(
+                            responseCode = "500",
+                            description = "Internal server error",
+                            content = @Content
+                    )
+            }
+    )
+    @GetMapping
+    public ResponseData<?> getPostsWithCursor(
+            @RequestParam(required = false) String cursor,
+            @RequestParam(defaultValue = "10") int limit) {
+        log.info("Request to get posts with cursor: {}, limit: {}", cursor, limit);
+        CursorPageResponse<CRUDPostResponse> posts = postService.getPostsWithCursor(cursor, limit);
+        return new ResponseData<>(HttpStatus.OK.value(), "Posts retrieved successfully", posts);
+    }
 }

@@ -4,12 +4,16 @@ import jakarta.annotation.PostConstruct;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import vn.socialmedia.common.helpers.CursorPageHelper;
 import vn.socialmedia.common.helpers.FileHelper;
+import vn.socialmedia.dto.request.CursorPageRequest;
 import vn.socialmedia.dto.request.PostCreationRequest;
 import vn.socialmedia.dto.response.CRUDPostResponse;
 import vn.socialmedia.dto.response.CRUDUserResponse;
+import vn.socialmedia.dto.response.CursorPageResponse;
 import vn.socialmedia.enums.FolderName;
 import vn.socialmedia.enums.MediaType;
 import vn.socialmedia.exception.BusinessException;
@@ -41,6 +45,7 @@ public class PostServiceImpl implements PostService {
     private final HashtagService hashtagService;
     private final CloudService cloudService;
     private final FollowRepo followRepo;
+    private final CursorPageHelper cursorPageHelper;
 
     private Map<MediaType, Function<MultipartFile, String>> uploadStrategies;
 
@@ -138,6 +143,54 @@ public class PostServiceImpl implements PostService {
         Long viewerId = getUser().getId();
         return Objects.equals(ownerId, viewerId)
                 || followRepo.isFollower(ownerId, viewerId);
+    }
+
+    @Override
+    public CursorPageResponse<CRUDPostResponse> getPostsWithCursor(String cursor, int limit) {
+        User user = getUser();
+
+        CursorPageRequest request = new CursorPageRequest();
+        if (cursor != null) {
+            request = cursorPageHelper.decodeCursor(cursor);
+        }
+
+        List<Post> posts = postRepo.getPosts(user.getId(),
+                request.getLastCreatedAt(),
+                request.getLastId(),
+                PageRequest.of(0, limit + 1));
+
+        boolean hasNext = posts.size() > limit;
+        if (hasNext) {
+            posts = posts.subList(0, limit);
+        }
+
+        List<CRUDPostResponse> responses = posts
+                .stream()
+                .map(post -> CRUDPostResponse.builder()
+                        .postId(post.getId())
+                        .privacy(post.getPrivacy())
+                        .author(CRUDUserResponse.builder().id(user.getId()).name(user.getName()).avatarUrl(user.getAvatar()).build())
+                        .caption(post.getCaption())
+                        .reactionCount(post.getReactions().size())
+                        .commentCount(post.getComments().size())
+                        .mediaUrl(post.getMediaFiles().stream().map(PostMedia::getUrl).toList())
+                        .createdAt(post.getCreatedAt())
+                        .build())
+                .toList();
+
+        String nextCursor = null;
+        if (hasNext) {
+            Post lastPost = posts.getLast();
+            nextCursor = cursorPageHelper.encodeCursor(CursorPageRequest.builder()
+                    .lastCreatedAt(lastPost.getCreatedAt())
+                    .lastId(lastPost.getId()).build());
+        }
+        
+        return CursorPageResponse.<CRUDPostResponse>builder()
+                .content(responses)
+                .nextCursor(nextCursor)
+                .hasNext(hasNext)
+                .build();
     }
 
     private Set<PostMedia> handlePostMediaUpload(MultipartFile[] files, Post post) {

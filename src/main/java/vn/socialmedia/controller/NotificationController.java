@@ -118,15 +118,15 @@ public class NotificationController {
     }
 
     @Operation(
-            summary = "Mark all notifications as read",
+            summary = "Mark a notification as read by id",
             description = """
-                    This API marks all notifications for the current user as read.
-                    - Updates all unread notifications to read status
+                    This API marks a notification for the current user as read.
+                    - Updates a unread notification to read status
                     """,
             responses = {
                     @ApiResponse(
                             responseCode = "200",
-                            description = "Notifications marked as read successfully"
+                            description = "Notification marked as read successfully"
                     ),
                     @ApiResponse(
                             responseCode = "500",
@@ -137,8 +137,8 @@ public class NotificationController {
     )
     @PutMapping("/mark-read")
     public ResponseData<?> markAsRead(@RequestParam Long id) {
-        log.info("Request to mark all notifications as read");
+        log.info("Request to mark a notification as read by id");
         notificationService.markAsRead(id);
-        return new ResponseData<>(HttpStatus.OK.value(), "Notifications marked as read successfully");
+        return new ResponseData<>(HttpStatus.OK.value(), "Notification marked as read successfully");
     }
 }

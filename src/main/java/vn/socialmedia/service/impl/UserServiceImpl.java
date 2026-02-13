@@ -30,8 +30,8 @@ public class UserServiceImpl implements UserService {
     CloudService cloudService;
 
     @Override
-    public void updateProfile(UpdateProfileRequest request, String email) {
-        User user = getUserByEmail(email);
+    public void updateProfile(UpdateProfileRequest request, String username) {
+        User user = getUserByUsername(username);
 
         user.setName(request.getName());
         user.setBio(request.getBio());
@@ -42,8 +42,8 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public void updateAvatar(String email, MultipartFile avatar) {
-        User user = getUserByEmail(email);
+    public void updateAvatar(String username, MultipartFile avatar) {
+        User user = getUserByUsername(username);
 
         validateImage(avatar);
         String filePath = cloudService.uploadImage(avatar, FolderName.AVATAR);
@@ -53,8 +53,8 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public CRUDUserResponse getProfile(String email) {
-        User user = getUserByEmail(email);
+    public CRUDUserResponse getProfile(String username) {
+        User user = getUserByUsername(username);
         return CRUDUserResponse.builder()
                 .id(user.getId())
                 .name(user.getName())
@@ -65,8 +65,8 @@ public class UserServiceImpl implements UserService {
                 .build();
     }
 
-    private User getUserByEmail(String email) {
-        return userRepository.findByEmail(email).orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+    private User getUserByUsername(String username) {
+        return userRepository.findByUsername(username).orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
     }
 
 

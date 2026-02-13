@@ -48,10 +48,6 @@ public class ReactionServiceImpl implements ReactionService {
 
         User user = SecurityUtil.getUser();
 
-        if (!postService.canViewFriendOnlyPost(post) && !postService.canViewPrivatePost(post)) {
-            throw new BusinessException(ErrorCode.NO_ACCESS_POST, post.getId());
-        }
-
         Reaction reaction = reactionRepo.findByPostIdAndUserId(request.getPostId(), user.getId());
         if (reaction == null) {
             reaction = Reaction.builder()
@@ -77,7 +73,7 @@ public class ReactionServiceImpl implements ReactionService {
                 .targetId(post.getId())
                 .build();
 
-        notificationService.sendToUser(user.getUsername(), notification);
+        notificationService.sendToUser(post.getUser().getUsername(), notification);
     }
 
     @Override

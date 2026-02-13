@@ -6,10 +6,10 @@ import vn.socialmedia.dto.response.CRUDUserResponse;
 
 public interface UserService {
 
-    void updateProfile(UpdateProfileRequest updateProfileRequest, String email);
+    void updateProfile(UpdateProfileRequest updateProfileRequest, String username);
 
-    void updateAvatar(String email, MultipartFile avatar);
+    void updateAvatar(String username, MultipartFile avatar);
 
-    CRUDUserResponse getProfile(String email);
+    CRUDUserResponse getProfile(String username);
 
 }

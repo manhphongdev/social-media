@@ -28,7 +28,6 @@ public class AuthController {
     @PostMapping("/login") //checked
     public ResponseData<TokenResponse> login(@Valid @RequestBody LoginRequest req, HttpServletResponse httpResponse) {
         log.info("Login Request: {}", req.getUsername());
-
         return new ResponseData<>(HttpStatus.OK.value(), "Login successfully", authenticationService.login(req, httpResponse));
     }
 

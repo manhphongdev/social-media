@@ -63,7 +63,7 @@ public class SecurityConfig {
 
     @Bean
     public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder(10);
+        return new BCryptPasswordEncoder(4);  // Reduced from 10 to 4 for development performance
     }
 
     @Bean

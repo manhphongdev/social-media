@@ -42,7 +42,6 @@ public class UserController {
     @GetMapping(value = "/profile/me")
     public ResponseData<?> getProfile(@AuthenticationPrincipal UserDetails userDetails) {
 
-
         return new ResponseData<>(HttpStatus.OK.value(), "Get profile successfully",
                 userService.getProfile(userDetails.getUsername()));
     }
