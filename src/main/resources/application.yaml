@@ -75,7 +75,6 @@ management:
         include: health,prometheus,metrics
         # include: health,prometheus,metrics
 
-
 jwt:
   access-token-secret: "8mhZcWZVPhDeucdGaUQhUQoSkda3yjAtkBPJNP/4dvQy"
   refresh-token-secret: "Gu4jjMNk9oBnertRHqfRZJdHnz5jihbbnjAHeWNQbpg9"

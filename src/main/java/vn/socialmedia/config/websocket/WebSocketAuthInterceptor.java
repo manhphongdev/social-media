@@ -43,7 +43,7 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
 
         String[] parts = authHeader.split(" ");
         if (parts.length != 2 || !"Bearer".equalsIgnoreCase(parts[0])) {
-            throw new JwtException("Invalid Authorization header format");
+            throw new JwtException("Invalid Authorization header format"); //TODO update exception
         }
 
         String token = parts[1];
