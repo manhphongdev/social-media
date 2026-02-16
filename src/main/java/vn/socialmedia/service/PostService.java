@@ -6,6 +6,8 @@ import vn.socialmedia.dto.response.CRUDPostResponse;
 import vn.socialmedia.dto.response.CursorPageResponse;
 import vn.socialmedia.model.Post;
 
+import java.util.List;
+
 public interface PostService {
 
     void createPost(PostCreationRequest request, MultipartFile[] files);
@@ -19,4 +21,6 @@ public interface PostService {
     boolean canViewFriendOnlyPost(Post post);
 
     CursorPageResponse<CRUDPostResponse> getPostsWithCursor(String cursor, int limit);
+
+    List<CRUDPostResponse> getAllPost();
 }

@@ -16,6 +16,8 @@ import vn.socialmedia.dto.response.CursorPageResponse;
 import vn.socialmedia.dto.response.ResponseData;
 import vn.socialmedia.service.PostService;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/posts")
 @Slf4j(topic = "POST_CONTROLLER")
@@ -127,6 +129,12 @@ public class PostController {
             @RequestParam(defaultValue = "10") int limit) {
         log.info("Request to get posts with cursor: {}, limit: {}", cursor, limit);
         CursorPageResponse<CRUDPostResponse> posts = postService.getPostsWithCursor(cursor, limit);
+        return new ResponseData<>(HttpStatus.OK.value(), "Posts retrieved successfully", posts);
+    }
+
+    @GetMapping("/all")
+    public ResponseData<?> getAllPost() {
+        List<CRUDPostResponse> posts = postService.getAllPost();
         return new ResponseData<>(HttpStatus.OK.value(), "Posts retrieved successfully", posts);
     }
 }

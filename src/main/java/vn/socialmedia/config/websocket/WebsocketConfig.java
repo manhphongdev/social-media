@@ -17,7 +17,7 @@ public class WebsocketConfig implements WebSocketMessageBrokerConfigurer {
 
     private final WebSocketAuthInterceptor authInterceptor;
     private final WebSocketOutboundLoggingInterceptor outboundLoggingInterceptor;
-    
+
     @Value("${frontend.url}")
     @NonFinal
     private String frontEndUrl;
@@ -33,7 +33,6 @@ public class WebsocketConfig implements WebSocketMessageBrokerConfigurer {
     public void configureMessageBroker(MessageBrokerRegistry registry) {
         registry.setApplicationDestinationPrefixes("/app");
 
-        // Enable both /topic and /queue destinations
         registry.enableSimpleBroker("/topic", "/queue");
     }
 

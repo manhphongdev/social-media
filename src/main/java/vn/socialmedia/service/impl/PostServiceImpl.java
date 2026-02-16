@@ -185,12 +185,32 @@ public class PostServiceImpl implements PostService {
                     .lastCreatedAt(lastPost.getCreatedAt())
                     .lastId(lastPost.getId()).build());
         }
-        
+
         return CursorPageResponse.<CRUDPostResponse>builder()
                 .content(responses)
                 .nextCursor(nextCursor)
                 .hasNext(hasNext)
                 .build();
+    }
+
+    @Override
+    public List<CRUDPostResponse> getAllPost() {
+        return postRepo.findAll().stream().map(post -> CRUDPostResponse.builder()
+                        .postId(post.getId())
+                        .privacy(post.getPrivacy())
+                        .author(CRUDUserResponse.builder()
+                                .name(post.getUser().getName())
+                                .id(post.getUser().getId())
+                                .avatarUrl(post.getUser().getAvatar())
+                                .build())
+                        .caption(post.getCaption())
+                        .reactionCount(post.getReactions().size())
+                        .commentCount(post.getComments().size())
+                        .mediaUrl(post.getMediaFiles().stream().map(PostMedia::getUrl).toList())
+                        .createdAt(post.getCreatedAt())
+                        .build()
+                )
+                .toList();
     }
 
     private Set<PostMedia> handlePostMediaUpload(MultipartFile[] files, Post post) {

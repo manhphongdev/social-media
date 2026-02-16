@@ -7,9 +7,9 @@ scrape_configs:
   - job_name: "prometheus"
     static_configs:
       - targets: [ "prometheus:9090" ]
-  - job_name: 'backend-service'
+  - job_name: 'social-media'
     metrics_path: '/actuator/prometheus'
     static_configs:
-      - targets: [ 'backend-service:8888' ]
+      - targets: [ 'host.docker.internal:8888' ]
         labels:
-          application: 'Backend Service'
+          application: 'Social Media Platform'

@@ -107,22 +107,7 @@ public class NotificationServiceImpl implements NotificationService {
                         .build())
                 .toList();
 
-        String nextCursor = null;
-
-        if (hasNext) {
-            Notification notificationLast = notifications.getLast();
-            nextCursor = cursorPageHelper.encodeCursor(CursorPageRequest
-                    .builder()
-                    .lastCreatedAt(notificationLast.getCreatedAt())
-                    .lastId(notificationLast.getId())
-                    .build()
-            );
-        }
-        return CursorPageResponse.<NotificationResponse>builder()
-                .content(notificationResponses)
-                .nextCursor(nextCursor)
-                .hasNext(hasNext)
-                .build();
+        return getNotificationResponseCursorPageResponse(notifications, hasNext, notificationResponses);
     }
 
     @Override
@@ -158,6 +143,10 @@ public class NotificationServiceImpl implements NotificationService {
                         .build())
                 .toList();
 
+        return getNotificationResponseCursorPageResponse(notifications, hasNext, notificationResponses);
+    }
+
+    private CursorPageResponse<NotificationResponse> getNotificationResponseCursorPageResponse(List<Notification> notifications, boolean hasNext, List<NotificationResponse> notificationResponses) {
         String nextCursor = null;
 
         if (hasNext) {

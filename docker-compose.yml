@@ -8,10 +8,21 @@ services:
       - --config.file=/etc/prometheus/prometheus.yaml
     ports:
       - "9090:9090"
+  grafana:
+    image: grafana/grafana
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
 
-  backend-service:
-    image: backend-service
-    container_name: backend-service
+  social-media:
+    image: maven:3.9-eclipse-temurin-17
+    container_name: social-media
+    working_dir: /app
+    volumes:
+      - .:/app
+    command: mvn spring-boot:run
     ports:
       - "8888:8888"
     environment:
@@ -20,3 +31,4 @@ services:
       DB_NAME: social_media
       DB_USER: root
       DB_PASS: 123456
+
