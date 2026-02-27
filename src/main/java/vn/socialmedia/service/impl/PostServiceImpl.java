@@ -105,12 +105,12 @@ public class PostServiceImpl implements PostService {
         Post post = postRepo.findById(id).orElseThrow(() -> new BusinessException(POST_NOT_FOUND, id));
 
         //case 1: privacy: private and user is owner
-        if (post.getPrivacy() == PRIVATE && canViewPrivatePost(post)) {
+        if (post.getPrivacy() == PRIVATE && !canViewPrivatePost(post)) {
             throw new BusinessException(NO_ACCESS_POST, id);
         }
 
         //case 2: privacy: friend only and current user is one of followers of post owner
-        if (post.getPrivacy() == FRIENDS_ONLY && canViewFriendOnlyPost(post)) {
+        if (post.getPrivacy() == FRIENDS_ONLY && !canViewFriendOnlyPost(post)) {
             throw new BusinessException(NO_ACCESS_POST, id);
         }
 
@@ -169,7 +169,7 @@ public class PostServiceImpl implements PostService {
                 .map(post -> CRUDPostResponse.builder()
                         .postId(post.getId())
                         .privacy(post.getPrivacy())
-                        .author(CRUDUserResponse.builder().id(user.getId()).name(user.getName()).avatarUrl(user.getAvatar()).build())
+                        .author(CRUDUserResponse.builder().id(user.getId()).name(user.getName()).avatarUrl(user.getAvatar()).build()) //TODO fix author
                         .caption(post.getCaption())
                         .reactionCount(post.getReactions().size())
                         .commentCount(post.getComments().size())
@@ -254,3 +254,4 @@ public class PostServiceImpl implements PostService {
         return hashtag;
     }
 }
+

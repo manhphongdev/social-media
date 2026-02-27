@@ -48,7 +48,6 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Override
     public void sendToUser(String toUsername, Notification notification) {
-        //TODO check session user
 
         if (notification != null) {
             notificationRepo.save(notification);
@@ -68,8 +67,28 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Override
     public void sendToUsers(List<String> usernames, Notification notification) {
-        //TODO check session user
-        usernames.forEach(username -> sendToUser(username, notification));
+        if (notification == null || usernames == null || usernames.isEmpty()) {
+            return;
+        }
+
+        // Save ONCE
+        notificationRepo.save(notification);
+
+        NotificationResponse response = NotificationResponse.builder()
+                .id(notification.getId())
+                .targetId(notification.getTargetId())
+                .type(notification.getType())
+                .targetType(notification.getTargetType())
+                .fromUser(notification.getFromUser().getId())
+                .text(notification.getText())
+                .isRead(notification.getIsRead())
+                .createdAt(notification.getCreatedAt())
+                .build();
+
+        // Send to all users
+        usernames.forEach(username ->
+                messagingTemplate.convertAndSendToUser(username, "/queue/notifications", response)
+        );
     }
 
     @Override
