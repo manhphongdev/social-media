@@ -8,20 +8,21 @@ import vn.socialmedia.service.OnlineStatusService;
 @Service
 @RequiredArgsConstructor
 public class OnlineStatusServiceImpl implements OnlineStatusService {
-    private final StringRedisTemplate template;
+    private static final String ONLINE_STATUS = "online:users";
+    private final StringRedisTemplate stringRedisTemplate;
 
     @Override
-    public void userConnected(Long userid) {
-
+    public void userConnected(String username) {
+        stringRedisTemplate.opsForSet().add(ONLINE_STATUS, username);
     }
 
     @Override
-    public void userDisconnected(Long userId) {
-
+    public void userDisconnected(String username) {
+        stringRedisTemplate.opsForSet().remove(ONLINE_STATUS, username);
     }
 
     @Override
-    public boolean isOnline(Long userId) {
-        return false;
+    public boolean isOnline(String username) {
+        return Boolean.TRUE.equals(stringRedisTemplate.opsForSet().isMember(ONLINE_STATUS, username));
     }
 }

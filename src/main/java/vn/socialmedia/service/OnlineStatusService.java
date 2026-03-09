@@ -2,10 +2,10 @@ package vn.socialmedia.service;
 
 public interface OnlineStatusService {
 
-    void userConnected(Long userid);
+    void userConnected(String username);
 
-    void userDisconnected(Long userId);
+    void userDisconnected(String username);
 
-    boolean isOnline(Long userId);
+    boolean isOnline(String username);
 
 }

@@ -24,14 +24,14 @@ spring:
       host: fresh-marmoset-4982.upstash.io
       port: 6379
       username: default
-      password: ARN2AAImcDE3MTUwMzQxNjRhYzU0ZjcxOTBjYjAyYzA4NWIwMDgxMXAxNDk4Mg
+      password: ${REDIS_PASS}
       ssl:
         enabled: true
   
   jpa:
     hibernate:
       ddl-auto: update
-    show-sql: true
+    show-sql: false
     properties:
       hibernate:
         format_sql: true
