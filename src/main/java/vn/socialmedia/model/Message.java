@@ -1,15 +1,17 @@
 package vn.socialmedia.model;
 
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import vn.socialmedia.enums.MediaType;
 
 import java.io.Serializable;
 
 @Entity
 @Table(name = "messages")
-@Getter
-@Setter
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder

@@ -18,10 +18,20 @@ spring:
     password: ${DB_PASS:123456}
     driver-class-name: com.mysql.cj.jdbc.Driver
 
+  #  Redis Upstash
+  data:
+    redis:
+      host: fresh-marmoset-4982.upstash.io
+      port: 6379
+      username: default
+      password: ARN2AAImcDE3MTUwMzQxNjRhYzU0ZjcxOTBjYjAyYzA4NWIwMDgxMXAxNDk4Mg
+      ssl:
+        enabled: true
+  
   jpa:
     hibernate:
       ddl-auto: update
-    show-sql: false
+    show-sql: true
     properties:
       hibernate:
         format_sql: true
@@ -34,35 +44,6 @@ spring:
       enabled: true
       max-file-size: 1000MB
       max-request-size: 1000MB
-
-  security:
-    oauth2:
-      client:
-        registration:
-          google-user:
-            client-id: ${GOOGLE_CLIENT_ID}
-            client-secret: ${GOOGLE_CLIENT_SECRET}
-            redirect-uri: "{baseUrl}/login/oauth2/code/google-user"
-            provider: google
-            scope:
-              - openid
-              - profile
-              - email
-          google-admin:
-            client-id: ${GOOGLE_CLIENT_ID}
-            client-secret: ${GOOGLE_CLIENT_SECRET}
-            redirect-uri: "{baseUrl}/login/oauth2/code/google-admin"
-            provider: google
-            scope:
-              - openid
-              - profile
-              - email
-        provider:
-          google:
-            user-info-uri: https://www.googleapis.com/oauth2/v3/userinfo
-            authorization-uri: https://accounts.google.com/o/oauth2/v2/auth
-            token-uri: https://oauth2.googleapis.com/token
-            user-name-attribute: sub
 
   devtools:
     add-properties: true

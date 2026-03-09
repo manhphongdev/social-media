@@ -5,8 +5,8 @@ import lombok.*;
 import vn.socialmedia.enums.ConversationType;
 
 import java.io.Serializable;
-import java.util.HashSet;
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.Set;
 
 @Entity
@@ -25,11 +25,11 @@ public class Conversation extends AbstractEntity implements Serializable {
     @Column(name = "last_message_at")
     private LocalDateTime lastMessageAt;
 
-    @OneToMany(mappedBy = "conversation", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "conversation")
     @Builder.Default
     private Set<ConversationParticipant> participants = new HashSet<>();
 
-    @OneToMany(mappedBy = "conversation", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "conversation")
     @Builder.Default
     private Set<Message> messages = new HashSet<>();
 
