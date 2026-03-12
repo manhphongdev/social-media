@@ -37,7 +37,7 @@ public class WsListener {
     public void disconnect(SessionDisconnectEvent session) {
         Principal user = session.getUser();
         assert user != null;
-        onlineStatusService.userDisconnected(user.getName());
+        onlineStatusService.userDisconnected(user.getName()); //TODO check disconnected
         log.info("Ws disconnect user ={}", user.getName());
     }
 }

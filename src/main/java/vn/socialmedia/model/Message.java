@@ -1,14 +1,12 @@
 package vn.socialmedia.model;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import vn.socialmedia.enums.MediaType;
 
 import java.io.Serializable;
 
+@EqualsAndHashCode(callSuper = true)
 @Entity
 @Table(name = "messages")
 @Data

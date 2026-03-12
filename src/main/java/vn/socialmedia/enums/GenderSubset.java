@@ -17,7 +17,10 @@ import static java.lang.annotation.ElementType.METHOD;
 @Constraint(validatedBy = GenderSubSetValidator.class)
 public @interface GenderSubset {
     Gender[] anyOf();
+
     String message() default "must be any of {anyOf}";
+
     Class<?>[] groups() default {};
+
     Class<? extends Payload>[] payload() default {};
 }

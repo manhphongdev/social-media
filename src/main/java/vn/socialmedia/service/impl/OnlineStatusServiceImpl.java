@@ -19,6 +19,10 @@ public class OnlineStatusServiceImpl implements OnlineStatusService {
     @Override
     public void userDisconnected(String username) {
         stringRedisTemplate.opsForSet().remove(ONLINE_STATUS, username);
+        Long size = stringRedisTemplate.opsForSet().size(ONLINE_STATUS);
+        if (size != null && size == 0) {
+            stringRedisTemplate.delete(ONLINE_STATUS);
+        }
     }
 
     @Override

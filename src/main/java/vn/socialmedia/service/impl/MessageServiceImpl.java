@@ -17,11 +17,14 @@ import vn.socialmedia.exception.BusinessException;
 import vn.socialmedia.model.Conversation;
 import vn.socialmedia.model.Message;
 import vn.socialmedia.model.User;
+import vn.socialmedia.repository.ConversationRepo;
 import vn.socialmedia.repository.MessageRepo;
 import vn.socialmedia.repository.UserRepository;
 import vn.socialmedia.service.CloudService;
 import vn.socialmedia.service.ConversationService;
 import vn.socialmedia.service.MessageService;
+
+import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
@@ -32,6 +35,7 @@ public class MessageServiceImpl implements MessageService {
     private final ConversationService conversationService;
     private final CloudService cloudService;
     private final SimpMessageSendingOperations messageTemplate;
+    private final ConversationRepo conversationRepo;
 
     @Override
     public void createMessage(SendMessageRequest request, MultipartFile media) {
@@ -52,6 +56,7 @@ public class MessageServiceImpl implements MessageService {
                     ? cloudService.uploadImage(media, FolderName.MESSAGE_IMAGE)
                     : cloudService.uploadVideo(media, FolderName.MESSAGE_VIDEO);
         }
+        conversation.setLastMessageAt(LocalDateTime.now());
 
         Message message = Message.builder()
                 .message(request.getMessage())
@@ -60,15 +65,22 @@ public class MessageServiceImpl implements MessageService {
                 .isRead(false)
                 .conversation(conversation)
                 .user(currentUser).build();
+        conversation.setLastMessageAt(LocalDateTime.now());
+        conversationRepo.save(conversation);
 
         messageRepo.save(message);
+
         broadcastMessage(MessageResponse.builder().id(message.getId())
                         .message(message.getMessage())
                         .mediaType(mediaType)
                         .mediaUrl(url)
                         .isRead(message.getIsRead())
                         .createdAt(message.getCreatedAt())
-                        .sender(UserSummary.builder().id(currentUser.getId()).displayName(currentUser.getName()).avatar(currentUser.getAvatar()).build()) //TODO checkOnline, lastSeen
+                        .sender(UserSummary.builder()
+                                .id(currentUser.getId())
+                                .displayName(currentUser.getName())
+                                .avatar(currentUser.getAvatar())
+                                .build())
                         .conversationId(conversation.getId())
                         .build(),
                 recipientUser.getUsername());
