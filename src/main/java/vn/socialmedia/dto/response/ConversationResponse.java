@@ -1,5 +1,6 @@
 package vn.socialmedia.dto.response;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -13,9 +14,10 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class ConversationResponse {
     private Long id;
-    private ConversationType type;          // PRIVATE, DIRECT, GROUP
+    private ConversationType type;          // DIRECT, GROUP
     private LocalDateTime lastMessageAt;
 
     // joiner

@@ -12,6 +12,8 @@ import vn.socialmedia.dto.request.SendMessageRequest;
 import vn.socialmedia.dto.response.ResponseData;
 import vn.socialmedia.service.MessageService;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/messages")
 @Slf4j(topic = "MESSAGE_CONTROLLER")
@@ -32,14 +34,13 @@ public class MessageController {
                     - Media will be uploaded to cloud storage
                     - Message data is sent using multipart/form-data
                     """
-
     )
     @PostMapping(consumes = "multipart/form-data")
-    public ResponseData<?> createMessage(
+    public ResponseData<?> sendMessage(
             @Valid @ModelAttribute SendMessageRequest request,
-            @RequestParam(required = false) MultipartFile media) {
+            @RequestParam(required = false) List<MultipartFile> medias) {
         log.info("Request to send message to user: {}", request.getRecipientId());
-        messageService.createMessage(request, media);
+        messageService.createMessage(request, medias);
         return new ResponseData<>(HttpStatus.CREATED.value(), "Message sent successfully");
     }
 }

@@ -19,7 +19,8 @@ public class CloudinaryConfig {
                 "cloud_name", cloudinaryProperties.getCloudName(),
                 "api_key", cloudinaryProperties.getApiKey(),
                 "api_secret", cloudinaryProperties.getSecretKey(),
-                "secure", true
+                "secure", true,
+                "upload_prefix", "https://api-ap.cloudinary.com"
         ));
     }
 }

@@ -32,6 +32,8 @@ public class ConversationServiceImpl implements ConversationService {
 
     @Override
     public Conversation getOrCreateConversation(User currentUser, User recipientUser) {
+
+        //TODO check blocked
         Optional<Conversation> existing = conversationRepo.findDirectConversationBetweenUsers(currentUser.getId(), recipientUser.getId());
 
         if (existing.isPresent()) {
@@ -61,7 +63,7 @@ public class ConversationServiceImpl implements ConversationService {
     }
 
     @Override
-    public List<ConversationResponse> getConversations(Long userId) {
+    public List<ConversationResponse> getConversations(Long userId, String cursor, int limit) {
 
         //TODO add cache
         return conversationRepo.findByUserId(userId).stream()
@@ -76,7 +78,7 @@ public class ConversationServiceImpl implements ConversationService {
                                     .displayName(cp.getUser().getName())
                                     .avatar(cp.getUser().getAvatar())
                                     .isOnline(onlineStatusService.isOnline(cp.getUser().getUsername()))
-                                    .lastSeen(LocalDateTime.now()) //TODO check last seen
+                                    .lastSeen(LocalDateTime.now()) //TODO check last seen, sender
                                     .build())
                             .collect(Collectors.toList());
 

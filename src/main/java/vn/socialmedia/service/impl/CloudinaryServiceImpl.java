@@ -3,7 +3,6 @@ package vn.socialmedia.service.impl;
 import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
 import lombok.RequiredArgsConstructor;
-import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import vn.socialmedia.enums.FolderName;
@@ -16,7 +15,6 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
-@Primary
 public class CloudinaryServiceImpl implements CloudService {
     private final Cloudinary cloudinary;
 

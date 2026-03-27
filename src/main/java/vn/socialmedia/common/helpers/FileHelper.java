@@ -17,7 +17,7 @@ public class FileHelper {
     private static final Tika TIKA = new Tika();
 
     private static final long MAX_IMAGE_SIZE = 50L * 1024 * 1024;  // 50MB
-    private static final long MAX_VIDEO_SIZE = 500L * 1024 * 1024; // 500MB
+    private static final long MAX_VIDEO_SIZE = 100L * 1024 * 1024; // 100MB
 
     private static final Set<String> IMAGE_EXT = Set.of("jpg", "jpeg", "png", "bmp", "gif");
     private static final Set<String> VIDEO_EXT = Set.of("mp4", "avi");
@@ -39,6 +39,20 @@ public class FileHelper {
         if (mime.startsWith("video/")) return MediaType.VIDEO;
 
         throw new BusinessException(ErrorCode.INVALID_FILE_TYPE);
+    }
+
+    public static void validateFileLimits(MultipartFile[] files) {
+        int imageCount = 0;
+        int videoCount = 0;
+
+        for (MultipartFile file : files) {
+            MediaType type = FileHelper.extractMediaType(file);
+            if (type == MediaType.IMAGE) imageCount++;
+            if (type == MediaType.VIDEO) videoCount++;
+        }
+
+        if (imageCount > 10) throw new BusinessException(ErrorCode.IMAGE_LIMIT_EXCEEDED);
+        if (videoCount > 3) throw new BusinessException(ErrorCode.VIDEO_LIMIT_EXCEEDED);
     }
 
     // ===================== PRIVATE =====================

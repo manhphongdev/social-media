@@ -22,4 +22,5 @@ public class TestController {
     public String testUploadFile(@RequestPart MultipartFile file) {
         return cloudService.uploadImage(file, FolderName.AVATAR);
     }
+
 }

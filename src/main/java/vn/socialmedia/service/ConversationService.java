@@ -10,5 +10,5 @@ public interface ConversationService {
 
     Conversation getOrCreateConversation(User currentUser, User recipientUser);
 
-    List<ConversationResponse> getConversations(Long userId);
+    List<ConversationResponse> getConversations(Long userId, String cursor, int limit);
 }

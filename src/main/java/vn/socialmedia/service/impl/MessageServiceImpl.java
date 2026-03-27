@@ -1,5 +1,6 @@
 package vn.socialmedia.service.impl;
 
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.simp.SimpMessageSendingOperations;
@@ -25,6 +26,11 @@ import vn.socialmedia.service.ConversationService;
 import vn.socialmedia.service.MessageService;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.function.Function;
 
 @Service
 @RequiredArgsConstructor
@@ -37,9 +43,26 @@ public class MessageServiceImpl implements MessageService {
     private final SimpMessageSendingOperations messageTemplate;
     private final ConversationRepo conversationRepo;
 
+    private Map<MediaType, Function<MultipartFile, String>> uploadStrategies;
+
+    @PostConstruct
+    void initUploadStrategies() {
+        uploadStrategies =
+                Map.of(
+                        MediaType.IMAGE, file -> {
+                            FileHelper.validateImage(file);
+                            return cloudService.uploadImage(file, FolderName.MESSAGE_IMAGE);
+                        },
+                        MediaType.VIDEO, file -> {
+                            FileHelper.validateVideo(file);
+                            return cloudService.uploadVideo(file, FolderName.MESSAGE_VIDEO);
+                        }
+                );
+    }
+
     @Override
-    public void createMessage(SendMessageRequest request, MultipartFile media) {
-        if (request.getMessage() == null && media == null) {
+    public void createMessage(SendMessageRequest request, List<MultipartFile> files) {
+        if (request.getMessage() == null && files.isEmpty()) {
             return;
         }
         //Step1 : find or create new conversation
@@ -49,13 +72,9 @@ public class MessageServiceImpl implements MessageService {
 
         //Step2 : create message
         String url = null;
-        MediaType mediaType = null;
-        if (media != null) {
-            mediaType = FileHelper.extractMediaType(media);
-            url = mediaType == MediaType.IMAGE
-                    ? cloudService.uploadImage(media, FolderName.MESSAGE_IMAGE)
-                    : cloudService.uploadVideo(media, FolderName.MESSAGE_VIDEO);
-        }
+        MediaType mediaType = MediaType.NONE;
+
+        //TODO upload files with asynch
         conversation.setLastMessageAt(LocalDateTime.now());
 
         Message message = Message.builder()
@@ -65,7 +84,7 @@ public class MessageServiceImpl implements MessageService {
                 .isRead(false)
                 .conversation(conversation)
                 .user(currentUser).build();
-        conversation.setLastMessageAt(LocalDateTime.now());
+        conversation.setLastMessageAt(LocalDateTime.now()); //TODO check lastSeen
         conversationRepo.save(conversation);
 
         messageRepo.save(message);
@@ -88,6 +107,21 @@ public class MessageServiceImpl implements MessageService {
 
     private void broadcastMessage(MessageResponse messageResponse, String recipientUsername) {
         messageTemplate.convertAndSendToUser(recipientUsername, "queue/messages", messageResponse);
+    }
+
+    private List<String> handleMessageMediaUpload(MultipartFile[] files, Message message) {
+        List<String> messageMedias = new ArrayList<>();
+        for (MultipartFile file : files) {
+            MediaType mediaType = FileHelper.extractMediaType(file);
+            messageMedias.add(processMediaUpload(file, mediaType));
+        }
+        return messageMedias;
+    }
+
+    private String processMediaUpload(MultipartFile file, MediaType mediaType) {
+        return Optional.ofNullable(uploadStrategies.get(mediaType))
+                .orElseThrow(() -> new IllegalArgumentException("Unsupported media type"))
+                .apply(file);
     }
 
 }

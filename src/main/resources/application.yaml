@@ -42,8 +42,8 @@ spring:
   servlet:
     multipart:
       enabled: true
-      max-file-size: 1000MB
-      max-request-size: 1000MB
+      max-file-size: 100MB
+      max-request-size: 100MB
 
   devtools:
     add-properties: true
@@ -66,12 +66,14 @@ aws:
   access-key: ${AWS_ACCESS_KEY}
   secret-key: ${AWS_SECRET_KEY}
   s3:
-    bucket: social-networkings
+    bucket: social-media-uploads-2026
     region: ap-southeast-1
   cloudfront:
-    url: https://d28ic9z7shvx92.cloudfront.net
+    url: https://cdn.manhphong.io.vn
 
 cloudinary:
   cloud_name: ${CLOUD_NAME}
   api_key: ${API_KEY}
   secret_key: ${SECRET_KEY}
+
+

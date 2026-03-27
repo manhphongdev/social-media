@@ -5,6 +5,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -38,6 +39,7 @@ import java.util.Set;
 @RequiredArgsConstructor
 public class AuthenticationServiceImpl implements AuthenticationService {
 
+    private static final String TOKEN_BLACKLIST = "token:blacklist";
     private final JwtService jwtService;
     private final UserRepository userRepository;
     private final AuthenticationManager authenticationManager;
@@ -45,6 +47,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     private final UserDetailsService userDetailsService;
     private final RefreshTokenRepository refreshTokenRepository;
     private final CookieService cookieService;
+    private final StringRedisTemplate stringRedisTemplate;
 
     @Override
     @Transactional
@@ -141,6 +144,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                         .jid(jwtService.extractId(token, TokenType.REFRESH_TOKEN))
                         .expiresAt(jwtService.extractExpiration(token, TokenType.REFRESH_TOKEN).toInstant())
                         .build());
+                stringRedisTemplate.opsForSet().add(TOKEN_BLACKLIST, token);
             } catch (Exception e) {
                 log.warn("Token invalid or expired during logout: {}", e.getMessage());
             }

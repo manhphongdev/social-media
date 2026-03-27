@@ -30,6 +30,8 @@ public enum ErrorCode {
     INVALID_POST_FILE_TYPE(3004, "Invalid type of post file"),
     FILE_EXCEED_LIMIT(3005, "File exceed limit"),
     INVALID_VIDEO_TYPE(3006, "Invalid image type"),
+    IMAGE_LIMIT_EXCEEDED(3007, "Image limit exceed limit"),
+    VIDEO_LIMIT_EXCEEDED(3008, "Video limit exceed limit"),
 
     //Follow Business
     CANNOT_FOLLOW_BY_MYSELF(4001, "Cannot follow by myself"),
