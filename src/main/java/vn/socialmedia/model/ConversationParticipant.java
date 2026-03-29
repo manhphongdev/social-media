@@ -28,6 +28,17 @@ public class ConversationParticipant {
     @Column(name = "joined_at")
     private LocalDateTime joinedAt;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "last_read_message_id")
+    private Message lastReadMessage;
+
+    @Column(name = "last_read_at")
+    private LocalDateTime lastReadAt;
+
+    @Column(name = "unread_count", nullable = false)
+    @Builder.Default
+    private Integer unreadCount = 0;
+
     @PrePersist
     protected void onCreate() {
         joinedAt = LocalDateTime.now();

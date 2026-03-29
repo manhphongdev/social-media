@@ -88,13 +88,12 @@ public class ConversationServiceImpl implements ConversationService {
                             .lastMessageAt(conversation.getLastMessageAt())
                             .participants(participantSummaries)
                             .lastMessage(lastMsg != null ? MessageResponse.builder()
-                                    .id(lastMsg.getId())
-                                    .message(lastMsg.getMessage())
-                                    .mediaType(lastMsg.getMediaType())
-                                    .mediaUrl(lastMsg.getMediaUrl())
-                                    .createdAt(lastMsg.getCreatedAt())
-                                    .conversationId(conversation.getId())
-                                    .build() : null)
+                                                           .id(lastMsg.getId())
+                                                           .message(lastMsg.getMessage())
+                                                           .mediaUrl(lastMsg.getMediaUrl())
+                                                           .createdAt(lastMsg.getCreatedAt())
+                                                           .conversationId(conversation.getId())
+                                                           .build() : null)
                             .unreadCount(0)  //TODO counter
                             .build();
                 }).toList();

@@ -39,6 +39,10 @@ spring:
         jdbc:
           time_zone: Asia/Ho_Chi_Minh
 
+  liquibase:
+    change-log: classpath:db/changelog/db.changelog-master.xml
+    enabled: true
+
   servlet:
     multipart:
       enabled: true
@@ -75,5 +79,4 @@ cloudinary:
   cloud_name: ${CLOUD_NAME}
   api_key: ${API_KEY}
   secret_key: ${SECRET_KEY}
-
 

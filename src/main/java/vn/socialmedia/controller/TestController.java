@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import vn.socialmedia.enums.FolderName;
 import vn.socialmedia.service.CloudService;
+import vn.socialmedia.service.S3ServicePresign;
 
 @RestController
 @Slf4j
@@ -17,6 +18,7 @@ import vn.socialmedia.service.CloudService;
 public class TestController {
 
     private final CloudService cloudService;
+    private final S3ServicePresign s3ServicePresign;
 
     @PostMapping(value = "/upload", consumes = "multipart/form-data")
     public String testUploadFile(@RequestPart MultipartFile file) {

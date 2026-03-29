@@ -11,11 +11,12 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class SendMessageRequest {
+public class MessageCreationRequest {
     @NotNull
     private Long recipientId;
 
     @Size(max = 1000, message = "Message too long")
     private String message;
 
+    private String mediaUrl;
 }

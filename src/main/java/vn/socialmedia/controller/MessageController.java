@@ -6,13 +6,13 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
-import vn.socialmedia.dto.request.SendMessageRequest;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+import vn.socialmedia.dto.request.MessageCreationRequest;
 import vn.socialmedia.dto.response.ResponseData;
 import vn.socialmedia.service.MessageService;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/messages")
@@ -37,10 +37,9 @@ public class MessageController {
     )
     @PostMapping(consumes = "multipart/form-data")
     public ResponseData<?> sendMessage(
-            @Valid @ModelAttribute SendMessageRequest request,
-            @RequestParam(required = false) List<MultipartFile> medias) {
+            @Valid @ModelAttribute MessageCreationRequest request) {
         log.info("Request to send message to user: {}", request.getRecipientId());
-        messageService.createMessage(request, medias);
+        messageService.createMessage(request);
         return new ResponseData<>(HttpStatus.CREATED.value(), "Message sent successfully");
     }
 }

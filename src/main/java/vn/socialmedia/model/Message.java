@@ -2,9 +2,10 @@ package vn.socialmedia.model;
 
 import jakarta.persistence.*;
 import lombok.*;
-import vn.socialmedia.enums.MediaType;
 
 import java.io.Serializable;
+import java.util.HashSet;
+import java.util.Set;
 
 @EqualsAndHashCode(callSuper = true)
 @Entity
@@ -18,16 +19,8 @@ public class Message extends AbstractEntity implements Serializable {
     @Column(columnDefinition = "TEXT")
     private String message;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "media_type")
-    private MediaType mediaType;
-
     @Column(name = "media_url", length = 500)
     private String mediaUrl;
-
-    @Column(name = "is_read", nullable = false)
-    @Builder.Default
-    private Boolean isRead = false;
 
     // Relationships
     @ManyToOne(fetch = FetchType.LAZY)
@@ -37,4 +30,8 @@ public class Message extends AbstractEntity implements Serializable {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
+
+    @OneToMany(mappedBy = "message", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private Set<MessageRead> readReceipts = new HashSet<>();
 }

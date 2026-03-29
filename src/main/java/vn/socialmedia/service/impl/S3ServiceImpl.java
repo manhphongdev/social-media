@@ -14,6 +14,7 @@ import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 import software.amazon.awssdk.services.s3.presigner.model.PresignedPutObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignRequest;
 import vn.socialmedia.config.properties.AWSProperties;
+import vn.socialmedia.dto.request.GenerateUploadUrlRequest;
 import vn.socialmedia.dto.response.PresignedUploadResponse;
 import vn.socialmedia.enums.FolderName;
 import vn.socialmedia.service.CloudService;
@@ -97,22 +98,18 @@ public class S3ServiceImpl implements CloudService, S3ServicePresign {
     }
 
     @Override
-    public PresignedUploadResponse generateUploadUrl(
-            String contentType,
-            String fileName,
-            Long fileSize,
-            FolderName folder) {
+    public PresignedUploadResponse generateUploadUrl(GenerateUploadUrlRequest request) {
         //validate contentType
-        validateContentType(contentType);
-        validateFileSize(contentType, fileSize);
+        validateContentType(request.getContentType());
+        validateFileSize(request.getContentType(), request.getFileSize());
 
-        String safeFileName = normalizeFileName(fileName);
-        String objectKey = folder.getPath() + "/" + UUID.randomUUID() + "-" + safeFileName;
+        String safeFileName = normalizeFileName(request.getFileName());
+        String objectKey = UUID.randomUUID() + "-" + safeFileName;
 
         PutObjectRequest putObjectRequest = PutObjectRequest.builder()
                 .bucket(awsProperties.getS3().getBucket())
                 .key(objectKey)
-                .contentType(contentType)
+                .contentType(request.getContentType())
                 .build();
 
         PutObjectPresignRequest presignRequest = PutObjectPresignRequest.builder()
@@ -123,14 +120,14 @@ public class S3ServiceImpl implements CloudService, S3ServicePresign {
         PresignedPutObjectRequest presigned = s3Presigner.presignPutObject(presignRequest);
 
         LocalDateTime expiresAt = LocalDateTime.now(ZoneOffset.UTC).plus(PRESIGN_TTL);
-        Long maxFileSize = resolveMaxSizeByContentType(contentType);
+        Long maxFileSize = resolveMaxSizeByContentType(request.getContentType());
         String fileUrl = awsProperties.getCloudfront().getUrl() + "/" + objectKey;
 
         return PresignedUploadResponse.builder()
                 .uploadId(UUID.randomUUID().toString())
                 .method("PUT")
                 .uploadUrl(presigned.url().toString())
-                .headers(Map.of("Content-Type", contentType))
+                .headers(Map.of("Content-Type", request.getContentType()))
                 .objectKey(objectKey)
                 .fileUrl(fileUrl)
                 .expiresAt(expiresAt)
@@ -174,6 +171,4 @@ public class S3ServiceImpl implements CloudService, S3ServicePresign {
     private long resolveMaxSizeByContentType(String contentType) {
         return contentType.toLowerCase().startsWith("image/") ? MAX_IMAGE_SIZE : MAX_VIDEO_SIZE;
     }
-
-
 }

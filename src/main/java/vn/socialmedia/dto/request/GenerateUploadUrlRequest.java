@@ -1,5 +1,6 @@
 package vn.socialmedia.dto.request;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
@@ -16,6 +17,7 @@ import lombok.Setter;
 public class GenerateUploadUrlRequest {
 
     @NotBlank(message = "contentType must not be blank")
+    @Schema(example = "image/jpeg", defaultValue = "image/jpeg")
     private String contentType;
 
     @Size(max = 255, message = "fileName too long")
@@ -23,5 +25,6 @@ public class GenerateUploadUrlRequest {
 
     @NotNull(message = "fileSize is required")
     @Positive(message = "fileSize must be greater than 0")
+    @Schema(defaultValue = "1024")
     private Long fileSize;
 }
