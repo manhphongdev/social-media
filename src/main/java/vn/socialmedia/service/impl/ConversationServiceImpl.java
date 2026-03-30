@@ -16,7 +16,6 @@ import vn.socialmedia.repository.ConversationRepo;
 import vn.socialmedia.service.ConversationService;
 import vn.socialmedia.service.OnlineStatusService;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -78,7 +77,6 @@ public class ConversationServiceImpl implements ConversationService {
                                     .displayName(cp.getUser().getName())
                                     .avatar(cp.getUser().getAvatar())
                                     .isOnline(onlineStatusService.isOnline(cp.getUser().getUsername()))
-                                    .lastSeen(LocalDateTime.now()) //TODO check last seen, sender
                                     .build())
                             .collect(Collectors.toList());
 
@@ -94,7 +92,6 @@ public class ConversationServiceImpl implements ConversationService {
                                                            .createdAt(lastMsg.getCreatedAt())
                                                            .conversationId(conversation.getId())
                                                            .build() : null)
-                            .unreadCount(0)  //TODO counter
                             .build();
                 }).toList();
     }

@@ -4,7 +4,6 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import vn.socialmedia.enums.MediaType;
 
 import java.time.LocalDateTime;
 
@@ -15,7 +14,6 @@ import java.time.LocalDateTime;
 public class MessageResponse {
     private Long id;
     private String message;
-    private MediaType mediaType;
     private String mediaUrl;
     private Boolean isRead;
     private LocalDateTime createdAt;

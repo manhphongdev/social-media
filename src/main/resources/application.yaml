@@ -39,10 +39,6 @@ spring:
         jdbc:
           time_zone: Asia/Ho_Chi_Minh
 
-  liquibase:
-    change-log: classpath:db/changelog/db.changelog-master.xml
-    enabled: true
-
   servlet:
     multipart:
       enabled: true

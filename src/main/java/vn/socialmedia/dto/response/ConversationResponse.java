@@ -24,6 +24,4 @@ public class ConversationResponse {
     private List<UserSummary> participants;
 
     private MessageResponse lastMessage;
-
-    private Integer unreadCount;
 }

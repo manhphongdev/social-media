@@ -5,12 +5,12 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import vn.socialmedia.model.ConversationParticipant;
-import vn.socialmedia.model.User;
+import vn.socialmedia.model.ConversationParticipantId;
 
 import java.util.List;
 
 @Repository
-public interface ConversationParticipantRepository extends JpaRepository<ConversationParticipant, Long> {
+public interface ConversationParticipantRepository extends JpaRepository<ConversationParticipant, ConversationParticipantId> {
 
     @Query("""
             select cp.user.username
@@ -21,5 +21,11 @@ public interface ConversationParticipantRepository extends JpaRepository<Convers
     List<String> findParticipantUsernamesExcluding(@Param("conversationId") Long conversationId,
                                                    @Param("userId") Long userId);
 
-    List<ConversationParticipant> findByUser(User user);
+    @Query("""
+            SELECT count(cp)
+            From ConversationParticipant  cp
+            where cp.user.id =: userId and cp.unreadCount>0
+            """)
+    int countUnreadConversations(@Param("userId") Long userId);
+
 }

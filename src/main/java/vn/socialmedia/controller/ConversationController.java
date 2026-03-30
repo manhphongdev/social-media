@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import vn.socialmedia.dto.response.ResponseData;
 import vn.socialmedia.service.ConversationService;
+import vn.socialmedia.service.MessageService;
 
 @RestController
 @RequestMapping("/conversations")
@@ -16,6 +17,7 @@ import vn.socialmedia.service.ConversationService;
 @Slf4j(topic = "CONVERSATION-CONTROLLER")
 public class ConversationController {
     private final ConversationService conversationService;
+    private final MessageService messageService;
 
     @GetMapping("/")
     public ResponseData<?> getConversation(
@@ -23,5 +25,10 @@ public class ConversationController {
             @RequestParam(required = false) String cursor,
             @RequestParam(defaultValue = "20") int limit) {
         return new ResponseData<>(HttpStatus.OK.value(), "Get conversations successfully", conversationService.getConversations(userId, cursor, limit));
+    }
+
+    @GetMapping("/{conversationId}/messages")
+    public ResponseData<?> getMessages(@RequestParam Long conversationId) {
+        return new ResponseData<>(HttpStatus.OK.value(), "Get messages successfully", messageService.getMessages(conversationId));
     }
 }

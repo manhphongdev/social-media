@@ -13,23 +13,30 @@ import vn.socialmedia.exception.BusinessException;
 import vn.socialmedia.model.Conversation;
 import vn.socialmedia.model.Message;
 import vn.socialmedia.model.User;
+import vn.socialmedia.repository.ConversationParticipantRepository;
 import vn.socialmedia.repository.ConversationRepo;
 import vn.socialmedia.repository.MessageRepo;
 import vn.socialmedia.repository.UserRepository;
+import vn.socialmedia.service.ChatViewStateService;
 import vn.socialmedia.service.ConversationService;
 import vn.socialmedia.service.MessageService;
 
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j(topic = "MESSAGE-SERVICE")
 public class MessageServiceImpl implements MessageService {
+
     private final MessageRepo messageRepo;
     private final UserRepository userRepository;
     private final ConversationService conversationService;
     private final SimpMessageSendingOperations messageTemplate;
     private final ConversationRepo conversationRepo;
+    private final ConversationParticipantRepository conversationParticipantRepository;
+    private final ChatViewStateService chatViewStateService;
 
     @Override
     public void createMessage(MessageCreationRequest request) {
@@ -66,8 +73,32 @@ public class MessageServiceImpl implements MessageService {
                 recipientUser.getUsername());
     }
 
+    @Override
+    public List<MessageResponse> getMessages(Long conversationId) {
+        Conversation conversation = conversationRepo.findById(conversationId).orElseThrow(() -> new BusinessException(ErrorCode.CONVERSATION_NOT_FOUND, conversationId));
+
+        Set<Message> messages = conversation.getMessages();
+
+        return messages
+                .stream()
+                .map(this::messageResponseBuilder)
+                .toList();
+    }
+
     private void broadcastMessage(MessageResponse messageResponse, String recipientUsername) {
         messageTemplate.convertAndSendToUser(recipientUsername, "/queue/messages", messageResponse);
+    }
+
+    private MessageResponse messageResponseBuilder(Message message) {
+        return MessageResponse.builder()
+                .id(message.getId())
+                .message(message.getMessage())
+                .mediaUrl(message.getMediaUrl())
+                .isRead(false) //TODO check isRead
+                .createdAt(message.getCreatedAt())
+                .sender(userSummaryBuilder(message.getUser()))
+                .conversationId(message.getConversation().getId())
+                .build();
     }
 
     private UserSummary userSummaryBuilder(User user) {
@@ -76,6 +107,19 @@ public class MessageServiceImpl implements MessageService {
                 .displayName(user.getName())
                 .avatar(user.getAvatar())
                 .build();
+    }
+
+    private int countUnreadConversations(long userId) {
+        return conversationParticipantRepository.countUnreadConversations(userId);
+    }
+
+    private void incrementUnreadConversations(User user) {
+        int unreadConversations = countUnreadConversations(user.getId()) + 1;
+        messageTemplate.convertAndSendToUser(user.getUsername(), "/queue/unreadConversations", unreadConversations);
+    }
+
+    private User getCurrentUser() {
+        return SecurityUtil.getUser();
     }
 
 }

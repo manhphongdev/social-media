@@ -35,7 +35,7 @@ public class MessageController {
                     - Message data is sent using multipart/form-data
                     """
     )
-    @PostMapping(consumes = "multipart/form-data")
+    @PostMapping()
     public ResponseData<?> sendMessage(
             @Valid @ModelAttribute MessageCreationRequest request) {
         log.info("Request to send message to user: {}", request.getRecipientId());
