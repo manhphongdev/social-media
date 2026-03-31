@@ -40,5 +40,4 @@ public class ChatViewController {
         String sessionId = headerAccessor.getSessionId();
         chatViewStateService.startViewingConversation(username, conversationId, sessionId);
     }
-
 }
