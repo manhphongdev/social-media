@@ -29,7 +29,7 @@ public class MessageController {
     @Operation(
             summary = "Send a message",
             description = """
-                    This API is used to send a message to another user.
+                    This API is used to send a message to an existing conversation.
                     - Supports sending text message or media (image/video)
                     - Media will be uploaded to cloud storage
                     - Message data is sent using multipart/form-data
@@ -38,7 +38,7 @@ public class MessageController {
     @PostMapping()
     public ResponseData<?> sendMessage(
             @Valid @ModelAttribute MessageCreationRequest request) {
-        log.info("Request to send message to user: {}", request.getRecipientId());
+        log.info("Request to send message to conversation: {}", request.getConversationId());
         messageService.createMessage(request);
         return new ResponseData<>(HttpStatus.CREATED.value(), "Message sent successfully");
     }

@@ -21,7 +21,7 @@ public class ConversationController {
 
     @GetMapping("/")
     public ResponseData<?> getConversation(
-            @RequestParam(required = true) Long userId,
+            @RequestParam Long userId,
             @RequestParam(required = false) String cursor,
             @RequestParam(defaultValue = "20") int limit) {
         return new ResponseData<>(HttpStatus.OK.value(), "Get conversations successfully", conversationService.getConversations(userId, cursor, limit));
@@ -30,5 +30,10 @@ public class ConversationController {
     @GetMapping("/{conversationId}/messages")
     public ResponseData<?> getMessages(@RequestParam Long conversationId) {
         return new ResponseData<>(HttpStatus.OK.value(), "Get messages successfully", messageService.getMessages(conversationId));
+    }
+
+    @GetMapping("/total-unread")
+    public ResponseData<?> countUnreadConversations(@RequestParam Long userId) {
+        return new ResponseData<>(HttpStatus.OK.value(), "Count unread conversation successfully", messageService.countUnreadConversations(userId));
     }
 }

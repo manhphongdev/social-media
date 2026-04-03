@@ -13,7 +13,7 @@ import lombok.Setter;
 @AllArgsConstructor
 public class MessageCreationRequest {
     @NotNull
-    private Long recipientId;
+    private Long conversationId;
 
     @Size(max = 1000, message = "Message too long")
     private String message;

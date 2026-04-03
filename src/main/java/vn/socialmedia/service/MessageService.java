@@ -9,4 +9,6 @@ public interface MessageService {
     void createMessage(MessageCreationRequest request);
 
     List<MessageResponse> getMessages(Long conversationId);
+
+    int countUnreadConversations(long userId);
 }

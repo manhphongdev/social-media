@@ -1,0 +1,20 @@
+:root {
+  --bg: #f1f5f9;
+  --surface: #ffffff;
+  --surface2: #f8fafc;
+  --border: #e2e8f0;
+  --text: #0f172a;
+  --text-muted: #64748b;
+  --accent: #4f46e5;
+  --accent2: #6366f1;
+  --danger: #dc2626;
+  --success: #16a34a;
+  --gray-btn: #64748b;
+  --log-bg: #0f172a;
+  --log-text: #93c5fd;
+}
+
+html, body {
+  background: var(--bg);
+  color: var(--text);
+}

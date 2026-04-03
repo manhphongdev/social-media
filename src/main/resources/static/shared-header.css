@@ -1,0 +1,355 @@
+.shared-header {
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 22px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 1200;
+  backdrop-filter: blur(6px);
+}
+
+.shared-brand {
+  font-size: 20px;
+  font-weight: 800;
+  text-decoration: none;
+  color: var(--accent);
+}
+
+.shared-nav {
+  display: flex;
+  gap: 6px;
+}
+
+.shared-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.shared-nav a {
+  text-decoration: none;
+  color: var(--text-muted);
+  font-size: 14px;
+  font-weight: 600;
+  padding: 8px 14px;
+  border-radius: 999px;
+  transition: 0.15s ease;
+}
+
+.shared-nav a:hover {
+  background: #eef2ff;
+  color: var(--accent);
+}
+
+.shared-nav a.active {
+  background: var(--accent);
+  color: #fff;
+}
+
+.shared-unread-conv-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--danger);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  min-width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  padding: 0 4px;
+  margin-left: 4px;
+}
+
+.shared-unread-conv-badge.hidden {
+  display: none;
+}
+
+.shared-auth-actions {
+  display: flex;
+  gap: 8px;
+  margin-left: 4px;
+}
+
+.shared-auth-actions button {
+  border: none;
+  border-radius: 999px;
+  padding: 7px 12px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+#shared-btn-login {
+  background: var(--accent);
+  color: #fff;
+}
+
+#shared-btn-logout {
+  background: var(--danger);
+  color: #fff;
+}
+
+.shared-auth-actions .hidden {
+  display: none !important;
+}
+
+.shared-auth-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.shared-auth-modal.hidden {
+  display: none !important;
+}
+
+.shared-auth-box {
+  width: min(92vw, 360px);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 16px;
+  display: grid;
+  gap: 10px;
+}
+
+.shared-auth-box h3 {
+  font-size: 16px;
+}
+
+.shared-auth-box input {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  padding: 8px 10px;
+  background: var(--surface2);
+  color: var(--text);
+}
+
+.shared-auth-row {
+  display: flex;
+  gap: 8px;
+}
+
+.shared-auth-row button {
+  flex: 1;
+  border: none;
+  border-radius: 9px;
+  padding: 8px 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.shared-auth-primary { background: var(--accent); color: #fff; }
+.shared-auth-secondary { background: var(--gray-btn); color: #fff; }
+
+.shared-auth-error {
+  color: var(--danger);
+  font-size: 12px;
+  min-height: 16px;
+}
+
+/* ── Notification Bell ── */
+.shared-notif-wrap {
+  position: relative;
+}
+
+.shared-notif-btn {
+  position: relative;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  color: var(--text-muted);
+  padding: 8px 12px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.shared-notif-btn:hover {
+  background: #eef2ff;
+  color: var(--accent);
+  border-color: #c7d2fe;
+}
+
+.shared-notif-btn.open {
+  background: #eef2ff;
+  color: var(--accent);
+  border-color: #c7d2fe;
+}
+
+.shared-notif-btn.hidden {
+  display: none !important;
+}
+
+.shared-notif-badge {
+  position: absolute;
+  top: 2px;
+  right: 4px;
+  background: var(--danger, #ef4444);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  min-width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 3px;
+  pointer-events: none;
+}
+
+.shared-notif-badge.hidden {
+  display: none !important;
+}
+
+/* Dropdown panel */
+.shared-notif-panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: min(92vw, 360px);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.13);
+  z-index: 1500;
+  overflow: hidden;
+}
+
+.shared-notif-panel.hidden {
+  display: none !important;
+}
+
+.shared-notif-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px 10px;
+  border-bottom: 1px solid var(--border);
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.shared-notif-header button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 11px;
+  color: var(--accent);
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: background 0.15s;
+}
+
+.shared-notif-header button:hover {
+  background: #eef2ff;
+}
+
+.shared-notif-list {
+  max-height: 380px;
+  overflow-y: auto;
+}
+
+.shared-notif-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  transition: background 0.12s;
+  position: relative;
+}
+
+.shared-notif-item:last-child {
+  border-bottom: none;
+}
+
+.shared-notif-item:hover {
+  background: var(--surface2, #f8faff);
+}
+
+.shared-notif-item.unread {
+  background: #f0f4ff;
+}
+
+.shared-notif-item.unread:hover {
+  background: #e4ecff;
+}
+
+.shared-notif-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  flex-shrink: 0;
+  margin-top: 6px;
+}
+
+.shared-notif-item.read .shared-notif-dot {
+  background: transparent;
+}
+
+.shared-notif-text {
+  flex: 1;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--text);
+}
+
+.shared-notif-time {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 3px;
+}
+
+.shared-notif-empty {
+  padding: 28px 16px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.shared-notif-load-more {
+  width: 100%;
+  border: none;
+  background: none;
+  padding: 10px;
+  font-size: 13px;
+  color: var(--accent);
+  font-weight: 600;
+  cursor: pointer;
+  border-top: 1px solid var(--border);
+  transition: background 0.12s;
+}
+
+.shared-notif-load-more:hover {
+  background: #eef2ff;
+}
+
+@media (max-width: 700px) {
+  .shared-header { padding: 0 12px; }
+  .shared-brand { font-size: 18px; }
+  .shared-nav a { padding: 7px 10px; font-size: 13px; }
+  .shared-right { gap: 6px; }
+  .shared-notif-btn > span:not(.shared-notif-badge) { display: none; }
+  .shared-notif-btn { padding: 8px; }
+  .shared-auth-actions button { padding: 6px 10px; font-size: 12px; }
+}

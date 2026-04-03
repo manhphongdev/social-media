@@ -28,13 +28,18 @@ public class ChatViewStateServiceImpl implements ChatViewStateService {
         //TODO check previous session to view what conversation
         String previousConversationId = stringRedisTemplate.opsForValue().get(sessionKey);
         if (previousConversationId != null && !previousConversationId.equals(conversationId.toString())) {
-            stringRedisTemplate.delete(sessionKey);
+            String previousConvSessionsKey = CHAT_VIEW_CONV_SESSIONS_KEY.formatted(username, Long.parseLong(previousConversationId));
+            stringRedisTemplate.opsForSet().remove(previousConvSessionsKey, sessionId);
+            Long remain = stringRedisTemplate.opsForSet().size(previousConvSessionsKey);
+            if (remain != null && remain == 0L) {
+                stringRedisTemplate.delete(previousConvSessionsKey);
+            }
         }
 
         stringRedisTemplate.opsForValue().set(sessionKey, conversationId.toString(), VIEW_TTL);
 
         String convSessionKey = CHAT_VIEW_CONV_SESSIONS_KEY.formatted(username, conversationId);
-        stringRedisTemplate.opsForSet().add(convSessionKey, conversationId.toString());
+        stringRedisTemplate.opsForSet().add(convSessionKey, sessionId);
         stringRedisTemplate.expire(convSessionKey, VIEW_TTL);
 
     }

@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>SocialApp - Home Feed</title>
+    <link href="/shared-theme.css" rel="stylesheet"/>
+    <link href="/shared-header.css" rel="stylesheet"/>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: "Segoe UI", system-ui, sans-serif;
+        }
+
+        .page {
+            max-width: 760px;
+            margin: 14px auto 24px;
+            padding: 0 14px 28px;
+            display: grid;
+            gap: 14px;
+        }
+
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            overflow: hidden;
+        }
+
+        .head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .head h2 {
+            font-size: 15px;
+        }
+
+        .body {
+            padding: 14px 16px;
+        }
+
+        .muted {
+            color: var(--text-muted);
+            font-size: 13px;
+        }
+
+        .row {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        input, textarea, select {
+            border: 1px solid var(--border);
+            border-radius: 9px;
+            padding: 8px 10px;
+            font-size: 14px;
+            background: var(--surface2);
+            color: var(--text);
+        }
+
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: var(--accent2);
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 92px;
+            resize: vertical;
+        }
+
+        button {
+            border: none;
+            cursor: pointer;
+            border-radius: 10px;
+            font-weight: 700;
+            padding: 8px 14px;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: #fff;
+        }
+
+        .btn-gray {
+            background: var(--gray-btn);
+            color: #fff;
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: #fff;
+        }
+
+        button:disabled {
+            opacity: .45;
+            cursor: not-allowed;
+        }
+
+        .feed-list {
+            display: grid;
+            gap: 10px;
+        }
+
+        .post {
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 12px;
+            background: var(--surface);
+        }
+
+        .post-top {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        .post-author {
+            font-weight: 700;
+        }
+
+        .post-time {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .post-caption {
+            white-space: pre-wrap;
+            line-height: 1.45;
+            margin-bottom: 8px;
+        }
+
+        .media {
+            display: grid;
+            gap: 8px;
+        }
+
+        .media img, .media video {
+            width: 100%;
+            max-height: 360px;
+            object-fit: cover;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+        }
+
+        .meta {
+            margin-top: 8px;
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .center {
+            text-align: center;
+        }
+
+        #log-panel {
+            height: 160px;
+            background: var(--surface);
+            border-top: 1px solid var(--border);
+            overflow-y: auto;
+            flex-shrink: 0;
+        }
+
+        #log-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 6px 12px;
+            background: var(--surface2);
+            border-bottom: 1px solid var(--border);
+        }
+
+        #log-header span {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--text-muted);
+            letter-spacing: .05em;
+        }
+
+        #log-header button {
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            border: 1px solid var(--border);
+            background: transparent;
+            color: var(--text-muted);
+        }
+
+        #log-output {
+            padding: 6px 12px;
+            font-family: monospace;
+            font-size: 11px;
+        }
+
+        .log-line {
+            padding: 2px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .log-line.info {
+            color: #60a5fa;
+        }
+
+        .log-line.success {
+            color: #4ade80;
+        }
+
+        .log-line.warn {
+            color: #facc15;
+        }
+
+        .log-line.error {
+            color: #f87171;
+        }
+    </style>
+</head>
+<body data-page="home">
+<div id="header-slot"></div>
+<div class="page">
+    <div class="card">
+        <div class="head"><h2>Tạo feed</h2></div>
+        <div class="body">
+            <textarea id="post-text" placeholder="Bạn đang nghĩ gì?"></textarea>
+            <div class="row" style="margin-top:8px;">
+                <select id="post-privacy">
+                    <option value="PUBLIC">PUBLIC</option>
+                    <option value="FRIENDS_ONLY">FRIENDS_ONLY</option>
+                    <option value="PRIVATE">PRIVATE</option>
+                </select>
+                <input accept="image/*,video/*" id="post-files" multiple type="file"/>
+                <button class="btn-primary" id="btn-create">Đăng feed</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="head">
+            <h2>Newfeed (GET /posts)</h2>
+            <div class="row">
+                <button class="btn-gray" id="btn-refresh">Làm mới</button>
+                <button class="btn-primary" id="btn-more">Tải thêm</button>
+            </div>
+        </div>
+        <div class="body">
+            <div class="feed-list" id="feed"></div>
+            <p class="muted center" id="feed-empty">Chưa có bài viết</p>
+        </div>
+    </div>
+
+    <!-- LOG PANEL -->
+    <div id="log-panel">
+        <div id="log-header">
+            <span>🪵 NHẬT KÝ DEBUG</span>
+            <button onclick="document.getElementById('log-output').innerHTML=''">Xóa</button>
+        </div>
+        <div id="log-output"></div>
+    </div>
+
+</div>
+
+<script>
+    const API = 'http://localhost:8888';
+    const state = {token: null, nextCursor: null, hasNext: false};
+
+    function log(msg, level = 'info') {
+        const out = document.getElementById('log-output');
+        if (!out) return;
+        const ts = new Date().toLocaleTimeString('vi-VN');
+        const div = document.createElement('div');
+        div.className = `log-line ${level}`;
+        div.textContent = `[${ts}] ${msg}`;
+        out.appendChild(div);
+        out.scrollTop = out.scrollHeight;
+    }
+
+    function token() {
+        return state.token || localStorage.getItem('accessToken');
+    }
+
+    function authHeaders(extra = {}) {
+        const tk = token();
+        return tk ? {...extra, Authorization: `Bearer ${tk}`} : extra;
+    }
+
+    function esc(v) {
+        return String(v || '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+    }
+
+    function parsePostList(payload) {
+        const data = payload?.data;
+        if (Array.isArray(data)) {
+            return {content: data, nextCursor: null, hasNext: false};
+        }
+        if (data && Array.isArray(data.content)) {
+            return {
+                content: data.content,
+                nextCursor: data.nextCursor || null,
+                hasNext: Boolean(data.hasNext),
+            };
+        }
+        return {content: [], nextCursor: null, hasNext: false};
+    }
+
+    function renderFeed(posts, append = false) {
+        const box = document.getElementById('feed');
+        const empty = document.getElementById('feed-empty');
+        if (!append) box.innerHTML = '';
+
+        posts.forEach((p) => {
+            const author = p?.author?.displayName || p?.author?.name || `User ${p?.author?.id || ''}`.trim();
+            const caption = p?.caption || '';
+            const createdAt = p?.createdAt ? new Date(p.createdAt).toLocaleString('vi-VN') : '--';
+            const media = Array.isArray(p?.mediaUrl) ? p.mediaUrl : [];
+            const post = document.createElement('article');
+            post.className = 'post';
+
+            let mediaHtml = '';
+            if (media.length) {
+                const items = media.map((url) => {
+                    const safe = esc(url);
+                    if (/\.(mp4|webm|ogg|mov|m4v)(\?|#|$)/i.test(url)) {
+                        return `<video controls src="${safe}"></video>`;
+                    }
+                    return `<img src="${safe}" alt="media" />`;
+                }).join('');
+                mediaHtml = `<div class="media">${items}</div>`;
+            }
+
+            post.innerHTML = `
+      <div class="post-top">
+        <div class="post-author">${esc(author)}</div>
+        <div class="post-time">${esc(createdAt)}</div>
+      </div>
+      <div class="post-caption">${esc(caption)}</div>
+      ${mediaHtml}
+      <div class="meta">❤️ ${p?.reactionCount || 0} · 💬 ${p?.commentCount || 0} · ${esc(p?.privacy || '')}</div>
+    `;
+            box.appendChild(post);
+        });
+
+        empty.style.display = box.children.length ? 'none' : '';
+    }
+
+    async function createFeed() {
+        const text = document.getElementById('post-text').value.trim();
+        const privacy = document.getElementById('post-privacy').value;
+        const files = document.getElementById('post-files').files;
+        if (!token()) throw new Error('Cần đăng nhập trước');
+        if (!text) throw new Error('Nội dung bài viết không được trống');
+
+        const form = new FormData();
+        form.append('text', text);
+        form.append('privacy', privacy);
+        for (let i = 0; i < files.length; i++) {
+            form.append('files', files[i]);
+        }
+
+        const res = await fetch(`${API}/posts/create`, {
+            method: 'POST',
+            headers: authHeaders(),
+            credentials: 'include',
+            body: form,
+        });
+        const json = await res.json();
+        if (!res.ok) throw new Error(json?.message || res.statusText);
+
+        document.getElementById('post-text').value = '';
+        document.getElementById('post-files').value = '';
+        log('Tạo feed thành công');
+        await loadFeed(true);
+    }
+
+    async function loadFeed(reset = false) {
+        if (!token()) {
+            renderFeed([], false);
+            log('Chưa có token, chưa thể tải feed');
+            return;
+        }
+        const qs = new URLSearchParams();
+        qs.set('limit', '10');
+        if (!reset && state.nextCursor) qs.set('cursor', state.nextCursor);
+
+        const res = await fetch(`${API}/posts?${qs.toString()}`, {
+            headers: authHeaders(),
+            credentials: 'include',
+        });
+        const json = await res.json();
+        if (!res.ok) throw new Error(json?.message || res.statusText);
+
+        const page = parsePostList(json);
+        state.nextCursor = page.nextCursor;
+        state.hasNext = page.hasNext;
+        renderFeed(page.content, !reset);
+        document.getElementById('btn-more').disabled = !state.hasNext;
+        log(`Tải feed OK: ${page.content.length} bài, hasNext=${state.hasNext}`);
+    }
+
+    async function run(action) {
+        try {
+            await action();
+        } catch (e) {
+            log(`Lỗi: ${e.message}`);
+        }
+    }
+
+    document.getElementById('btn-create').addEventListener('click', () => run(createFeed));
+    document.getElementById('btn-refresh').addEventListener('click', () => run(() => loadFeed(true)));
+    document.getElementById('btn-more').addEventListener('click', () => run(() => loadFeed(false)));
+
+    window.addEventListener('shared-auth-changed', function (e) {
+        var detail = e && e.detail ? e.detail : {};
+        if (detail.loggedIn) {
+            state.token = detail.token || localStorage.getItem('accessToken');
+            run(() => loadFeed(true));
+            return;
+        }
+        state.token = null;
+        state.nextCursor = null;
+        state.hasNext = false;
+        renderFeed([], false);
+        document.getElementById('btn-more').disabled = true;
+    });
+
+    (function init() {
+        const tk = localStorage.getItem('accessToken');
+        if (tk) state.token = tk;
+        if (state.token) run(() => loadFeed(true));
+        else log('Sẵn sàng. Đăng nhập để tải feed.');
+    })();
+</script>
+<script src="/shared-header.js"></script>
+</body>
+</html>

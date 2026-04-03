@@ -11,7 +11,6 @@ import java.util.List;
 
 @Repository
 public interface MessageReadRepo extends JpaRepository<MessageRead, MessageReadId> {
-    List<MessageRead> findByMessageIdInAndUserId(List<Long> messageIds, Long userId);
 
     @Query("""
             select mr

@@ -8,6 +8,7 @@ import vn.socialmedia.model.ConversationParticipant;
 import vn.socialmedia.model.ConversationParticipantId;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface ConversationParticipantRepository extends JpaRepository<ConversationParticipant, ConversationParticipantId> {
@@ -24,8 +25,19 @@ public interface ConversationParticipantRepository extends JpaRepository<Convers
     @Query("""
             SELECT count(cp)
             From ConversationParticipant  cp
-            where cp.user.id =: userId and cp.unreadCount>0
+            where cp.user.id = :userId and cp.unreadCount > 0
             """)
     int countUnreadConversations(@Param("userId") Long userId);
 
+    Optional<ConversationParticipant> findByConversation_IdAndUser_Id(Long conversationId, Long userId);
+
+    @Query("""
+            select cp
+            from ConversationParticipant cp
+            join fetch cp.user
+            where cp.conversation.id = :conversationId
+              and cp.user.id <> :excludedUserId
+            """)
+    List<ConversationParticipant> findParticipantsExcludingUser(@Param("conversationId") Long conversationId,
+                                                                @Param("excludedUserId") Long excludedUserId);
 }

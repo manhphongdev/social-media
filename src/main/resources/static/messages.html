@@ -1,0 +1,968 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SocialApp - Tin nhắn</title>
+  <link rel="stylesheet" href="/shared-theme.css" />
+  <link rel="stylesheet" href="/shared-header.css" />
+
+  <!-- SockJS + STOMP via CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@stomp/stompjs@7/bundles/stomp.umd.min.js"></script>
+
+  <style>
+    /* ===== RESET & BASE ===== */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root { --sidebar-w: 320px; }
+    html, body { height: 100%; font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); }
+
+    /* ===== LAYOUT ===== */
+    #app { display: flex; flex-direction: column; height: calc(100vh - 64px); }
+
+    #ws-status {
+      font-size: 12px; padding: 4px 10px; border-radius: 20px; font-weight: 600;
+      background: #eef2ff; color: var(--text-muted);
+    }
+    #ws-status.connected { background: rgba(34,197,94,.15); color: var(--success); }
+    #ws-status.disconnected { background: rgba(239,68,68,.12); color: var(--danger); }
+
+    /* ===== MAIN ===== */
+    #main { display: flex; flex: 1; overflow: hidden; }
+
+    /* ===== SIDEBAR ===== */
+    #sidebar {
+      width: var(--sidebar-w); flex-shrink: 0; display: flex; flex-direction: column;
+      border-right: 1px solid var(--border); background: var(--surface);
+    }
+    #sidebar-header { padding: 16px; border-bottom: 1px solid var(--border); }
+    #sidebar-header h2 { font-size: 15px; font-weight: 700; margin-bottom: 10px; }
+    #sidebar-header p { font-size: 12px; color: var(--text-muted); }
+    #btn-load-convs {
+      width: 100%; padding: 8px; border-radius: 8px; font-size: 13px; font-weight: 600;
+      cursor: pointer; border: none; background: var(--accent); color: #fff; margin-top: 8px;
+      transition: opacity .15s;
+    }
+    #btn-load-convs:hover { opacity: .85; }
+    #conv-list { flex: 1; overflow-y: auto; padding: 8px; }
+    .conv-item {
+      display: flex; align-items: center; gap: 10px; padding: 10px 12px;
+      border-radius: 10px; cursor: pointer; transition: background .15s; margin-bottom: 4px;
+    }
+    .conv-item:hover { background: var(--surface2); }
+    .conv-item.active { background: rgba(108,99,255,.15); border: 1px solid rgba(108,99,255,.3); }
+    .conv-avatar {
+      width: 42px; height: 42px; border-radius: 50%; background: var(--accent);
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 15px; flex-shrink: 0;
+    }
+    .conv-info { flex: 1; min-width: 0; }
+    .conv-name { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .conv-last { font-size: 12px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
+    .conv-time { font-size: 11px; color: var(--text-muted); flex-shrink: 0; }
+
+    /* ===== CHAT AREA ===== */
+    #chat-area { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+    #chat-placeholder {
+      flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+      color: var(--text-muted); gap: 8px;
+    }
+    #chat-placeholder .icon { font-size: 48px; }
+    #chat-placeholder p { font-size: 14px; }
+    #chat-header {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 20px; background: var(--surface); border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    #chat-header .avatar {
+      width: 38px; height: 38px; border-radius: 50%; background: var(--accent);
+      display: flex; align-items: center; justify-content: center; font-weight: 700;
+    }
+    #chat-header .info .name { font-size: 14px; font-weight: 600; }
+    #chat-header .info .status { font-size: 12px; color: var(--text-muted); }
+
+    #messages-scroll {
+      flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 10px;
+    }
+    .msg { display: flex; flex-direction: column; max-width: 65%; }
+    .msg.me { align-self: flex-end; align-items: flex-end; }
+    .msg.other { align-self: flex-start; align-items: flex-start; }
+    .msg .sender { font-size: 11px; color: var(--text-muted); margin-bottom: 3px; }
+    .msg .bubble {
+      padding: 10px 14px; border-radius: 16px; font-size: 14px; line-height: 1.45;
+      word-break: break-word; max-width: 100%;
+    }
+    .msg.me .bubble { background: var(--accent); color: #fff; border-bottom-right-radius: 4px; }
+    .msg.other .bubble { background: var(--surface2); border-bottom-left-radius: 4px; }
+    .msg .ts { font-size: 10px; color: var(--text-muted); margin-top: 3px; }
+    .msg img { max-width: 260px; border-radius: 10px; cursor: pointer; }
+    .msg video { max-width: 260px; border-radius: 10px; }
+
+    #msg-input-area {
+      display: flex; align-items: center; gap: 10px;
+      padding: 12px 16px; border-top: 1px solid var(--border); background: var(--surface);
+      flex-shrink: 0;
+    }
+    #msg-input {
+      flex: 1; padding: 10px 14px; border-radius: 22px;
+      border: 1px solid var(--border); background: var(--surface2);
+      color: var(--text); font-size: 14px; outline: none;
+    }
+    #msg-input:focus { border-color: var(--accent); }
+    #btn-send {
+      padding: 10px 20px; border-radius: 22px; font-size: 13px; font-weight: 700;
+      cursor: pointer; border: none; background: var(--accent); color: #fff;
+      transition: opacity .15s;
+    }
+    #btn-send:hover { opacity: .85; }
+    #btn-send:disabled { opacity: .4; cursor: not-allowed; }
+
+    /* ===== LOG PANEL ===== */
+    #log-panel {
+      height: 160px; background: #ffffff; border-top: 1px solid var(--border);
+      overflow-y: auto; flex-shrink: 0;
+    }
+    #log-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 6px 12px; background: #f8fafc; border-bottom: 1px solid var(--border);
+    }
+    #log-header span { font-size: 11px; font-weight: 700; color: var(--text-muted); letter-spacing: .05em; }
+    #log-header button {
+      font-size: 11px; padding: 2px 8px; border-radius: 4px; cursor: pointer;
+      border: 1px solid var(--border); background: transparent; color: var(--text-muted);
+    }
+    #log-output { padding: 6px 12px; font-family: monospace; font-size: 11px; }
+    .log-line { padding: 2px 0; border-bottom: 1px solid #e2e8f0; }
+    .log-line.info { color: #60a5fa; }
+    .log-line.success { color: #4ade80; }
+    .log-line.warn { color: #facc15; }
+    .log-line.error { color: #f87171; }
+    .log-line.ws { color: #a78bfa; }
+    .log-line.data { color: #94a3b8; }
+
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body data-page="messages">
+<div id="header-slot"></div>
+<div id="app">
+
+  <!-- MAIN -->
+  <div id="main">
+    <!-- SIDEBAR -->
+    <div id="sidebar">
+      <div id="sidebar-header">
+        <h2>Cuộc trò chuyện</h2>
+        <p id="user-info-text" style="margin-bottom:6px">Chưa đăng nhập</p>
+        <div style="display:flex;gap:8px;align-items:center;margin:8px 0;">
+          <span id="ws-status" class="disconnected">WS: Ngắt kết nối</span>
+          <input type="number" id="input-userid" placeholder="User ID" style="max-width:112px;padding:7px 9px;border:1px solid var(--border);border-radius:8px;background:var(--surface2);color:var(--text);" />
+        </div>
+        <button id="btn-load-convs">Tải danh sách cuộc trò chuyện</button>
+      </div>
+      <div id="conv-list"></div>
+    </div>
+
+    <!-- CHAT AREA -->
+    <div id="chat-area">
+      <div id="chat-placeholder">
+        <div class="icon">💬</div>
+        <p>Chọn một cuộc trò chuyện để bắt đầu</p>
+      </div>
+      <div id="chat-main" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
+        <div id="chat-header">
+          <div class="avatar" id="chat-avatar">?</div>
+          <div class="info">
+            <div class="name" id="chat-name">—</div>
+            <div class="status" id="chat-status">—</div>
+          </div>
+        </div>
+        <div id="messages-scroll"></div>
+        <div id="msg-input-area">
+          <input type="text" id="msg-input" placeholder="Nhập tin nhắn..." />
+          <button id="btn-send" disabled>Gửi</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LOG PANEL -->
+  <div id="log-panel">
+    <div id="log-header">
+      <span>🪵 NHẬT KÝ DEBUG</span>
+      <button onclick="document.getElementById('log-output').innerHTML=''">Xóa</button>
+    </div>
+    <div id="log-output"></div>
+  </div>
+</div>
+
+<script>
+// =====================================
+// CONFIG
+// =====================================
+const API = 'http://localhost:8888';
+const WS_URL = `${API}/ws`;
+const CHAT_VIEW_PING_INTERVAL_MS = 25000;
+
+// =====================================
+// STATE
+// =====================================
+let state = {
+  token: null,
+  currentUserId: null,
+  conversations: [],
+  selectedConversation: null,
+  stompClient: null,
+  wsConnected: false,
+  wsSubscription: null,
+  viewingConversationId: null,
+  viewPingIntervalId: null
+};
+
+// =====================================
+// LOGGER
+// =====================================
+function log(msg, level = 'info') {
+  const out = document.getElementById('log-output');
+  const ts = new Date().toLocaleTimeString('vi-VN');
+  const div = document.createElement('div');
+  div.className = `log-line ${level}`;
+  div.textContent = `[${ts}] ${msg}`;
+  out.appendChild(div);
+  out.scrollTop = out.scrollHeight;
+}
+
+// =====================================
+// TOKEN HELPERS
+// =====================================
+function getToken() {
+  return state.token || localStorage.getItem('accessToken');
+}
+
+function setToken(token) {
+  state.token = token;
+  localStorage.setItem('accessToken', token);
+  log(`✓ Token đã lưu: ${token.substring(0, 30)}...`, 'success');
+  updateAuthUI();
+}
+
+function getUserId() {
+  const fromInput = parseInt(document.getElementById('input-userid').value);
+  if (!isNaN(fromInput) && fromInput > 0) return fromInput;
+  return state.currentUserId;
+}
+
+// =====================================
+// UPDATE UI
+// =====================================
+function updateAuthUI() {
+  const token = getToken();
+  const userText = document.getElementById('user-info-text');
+
+  if (token) {
+    const uid = getUserId();
+    userText.textContent = uid ? `Đã đăng nhập - User ID: ${uid}` : 'Đã có token, nhập User ID';
+  } else {
+    userText.textContent = 'Chưa đăng nhập';
+  }
+}
+
+function updateWsStatus(connected) {
+  state.wsConnected = connected;
+  const el = document.getElementById('ws-status');
+  el.textContent = connected ? 'WS: Đã kết nối' : 'WS: Ngắt kết nối';
+  el.className = connected ? 'connected' : 'disconnected';
+  document.getElementById('btn-send').disabled = !state.selectedConversation;
+}
+
+async function hydrateCurrentUser() {
+  try {
+    const res = await fetch(`${API}/users/profile/me`, {
+      headers: { 'Authorization': `Bearer ${getToken()}` },
+      credentials: 'include'
+    });
+    const json = await res.json();
+    log(`Hồ sơ ${res.status}: ${JSON.stringify(json).substring(0, 200)}`, res.ok ? 'data' : 'warn');
+
+    if (!res.ok) {
+      return;
+    }
+
+    const user = json?.data;
+    if (user?.id) {
+      state.currentUserId = user.id;
+      document.getElementById('input-userid').value = user.id;
+      localStorage.setItem('currentUser', JSON.stringify(user));
+      log(`Đã tải hồ sơ người dùng (id=${user.id})`, 'success');
+    }
+  } catch (error) {
+    log(`Lỗi lấy hồ sơ: ${error.message}`, 'warn');
+  }
+}
+
+window.addEventListener('shared-auth-changed', async (event) => {
+  const detail = event?.detail || {};
+  if (!detail.loggedIn) {
+    syncViewingConversation(null);
+    state.token = null;
+    state.currentUserId = null;
+    state.conversations = [];
+    state.selectedConversation = null;
+    document.getElementById('input-userid').value = '';
+    disconnectWs();
+    renderConversationList();
+    document.getElementById('chat-main').style.display = 'none';
+    document.getElementById('chat-placeholder').style.display = 'flex';
+    updateAuthUI();
+    return;
+  }
+
+  state.token = detail.token || localStorage.getItem('accessToken');
+  if (detail.user?.id) {
+    state.currentUserId = detail.user.id;
+    document.getElementById('input-userid').value = detail.user.id;
+    localStorage.setItem('currentUser', JSON.stringify(detail.user));
+  } else {
+    await hydrateCurrentUser();
+  }
+  updateAuthUI();
+  await loadConversations();
+  connectWs();
+});
+
+// =====================================
+// LOAD CONVERSATIONS
+// =====================================
+async function loadConversations() {
+  const token = getToken();
+  const userId = getUserId();
+
+  if (!token) { log('⚠️ Chưa có token - hãy đăng nhập trước', 'warn'); return; }
+  if (!userId) { log('⚠️ Chưa có User ID - nhập vào ô "User ID hiện tại"', 'warn'); return; }
+
+  log(`📡 GET /conversations/?userId=${userId}`, 'info');
+
+  try {
+    const res = await fetch(`${API}/conversations/?userId=${userId}&limit=20`, {
+      headers: { 'Authorization': `Bearer ${token}` },
+      credentials: 'include'
+    });
+    const json = await res.json();
+    log(`📥 Trạng thái phản hồi: ${res.status}`, res.ok ? 'success' : 'error');
+    log(`📦 Raw: ${JSON.stringify(json).substring(0, 300)}`, 'data');
+
+    if (!res.ok) {
+      log(`❌ API lỗi: ${json.message || res.statusText}`, 'error');
+      return;
+    }
+
+    const rawList = json.data || [];
+    log(`✓ Nhận được ${rawList.length} cuộc trò chuyện`, 'success');
+
+    state.conversations = rawList.map(c => {
+      const partner = (c.participants || []).find(p => p.id !== userId) || c.participants?.[0];
+      const lm = c.lastMessage;
+      return {
+        id: c.id,
+        userId: String(partner?.id ?? c.id),
+        userName: partner?.displayName || 'Không rõ',
+        userAvatar: partner?.avatar ?? null,
+        isOnline: partner?.isOnline ?? false,
+        lastMessage: lm?.message?.trim() || (lm?.mediaUrl ? '📎 Tệp đính kèm' : 'Bắt đầu cuộc trò chuyện'),
+        lastMessageTime: parseApiDate(lm?.createdAt || c.lastMessageAt),
+        messages: [],
+        unreadCount: 0
+      };
+    }).sort((a, b) => b.lastMessageTime - a.lastMessageTime);
+
+    renderConversationList();
+
+    const selectedId = state.selectedConversation?.id;
+    const conversationToSelect = state.conversations.find(c => c.id === selectedId) || state.conversations[0];
+    if (conversationToSelect) {
+      await selectConversation(conversationToSelect);
+    }
+  } catch (err) {
+    log(`💥 Lỗi tải dữ liệu: ${err.message}`, 'error');
+  }
+}
+
+document.getElementById('btn-load-convs').addEventListener('click', loadConversations);
+
+// =====================================
+// RENDER CONVERSATION LIST
+// =====================================
+function renderConversationList() {
+  const list = document.getElementById('conv-list');
+  list.innerHTML = '';
+
+  if (!state.conversations.length) {
+    list.innerHTML = '<div style="padding:20px;color:var(--text-muted);font-size:13px;text-align:center">Không có cuộc trò chuyện</div>';
+    return;
+  }
+
+  state.conversations.forEach(conv => {
+    const el = document.createElement('div');
+    el.className = 'conv-item' + (state.selectedConversation?.id === conv.id ? ' active' : '');
+    el.dataset.id = conv.id;
+
+    const initials = conv.userName.split(' ').map(w => w[0]).join('').substring(0,2).toUpperCase();
+    const timeStr  = formatTime(conv.lastMessageTime);
+
+    el.innerHTML = `
+      <div class="conv-avatar">${initials}</div>
+      <div class="conv-info">
+        <div class="conv-name">${esc(conv.userName)}</div>
+        <div class="conv-last">${esc(conv.lastMessage)}</div>
+      </div>
+      <div class="conv-time">${timeStr}</div>
+    `;
+
+    el.addEventListener('click', () => selectConversation(conv));
+    list.appendChild(el);
+  });
+
+  log(`🧩 Đã render ${state.conversations.length} mục vào sidebar`, 'info');
+}
+
+// =====================================
+// SELECT CONVERSATION + LOAD MESSAGES
+// =====================================
+async function selectConversation(conv) {
+  state.selectedConversation = conv;
+  syncViewingConversation(Number(conv.id));
+
+  // Highlight active in sidebar
+  document.querySelectorAll('.conv-item').forEach(el => el.classList.remove('active'));
+  const activeEl = document.querySelector(`.conv-item[data-id="${conv.id}"]`);
+  if (activeEl) activeEl.classList.add('active');
+
+  // Show chat panel
+  document.getElementById('chat-placeholder').style.display = 'none';
+  const chatMain = document.getElementById('chat-main');
+  chatMain.classList.remove('hidden');
+  chatMain.style.display = 'flex';
+
+  const initials = conv.userName.split(' ').map(w => w[0]).join('').substring(0,2).toUpperCase();
+  document.getElementById('chat-avatar').textContent = initials;
+  document.getElementById('chat-name').textContent   = conv.userName;
+  document.getElementById('chat-status').textContent = conv.isOnline ? '🟢 Đang hoạt động' : '⚪ Không hoạt động';
+
+  document.getElementById('btn-send').disabled = false;
+
+  log(`➡️ Đã chọn cuộc trò chuyện id=${conv.id} (${conv.userName})`, 'info');
+
+  // Always refresh messages from API when opening a conversation.
+  await loadMessages(conv);
+}
+
+// =====================================
+// LOAD MESSAGES
+// =====================================
+async function loadMessages(conv) {
+  const token = getToken();
+  const userId = getUserId();
+  if (!token) { log('⚠️ Chưa có token', 'warn'); return; }
+
+  const conversationId = Number(conv?.id);
+  const scroll = document.getElementById('messages-scroll');
+
+  if (!Number.isFinite(conversationId)) {
+    log(`❌ conversationId không hợp lệ: ${conv?.id}`, 'error');
+    scroll.innerHTML = '<div style="padding:20px;color:var(--danger)">conversationId không hợp lệ</div>';
+    return;
+  }
+
+  const requestUrl = `${API}/conversations/${conversationId}/messages?conversationId=${conversationId}`;
+  log(`📡 GET ${requestUrl}`, 'info');
+  scroll.innerHTML = '<div style="padding:20px;color:var(--text-muted);text-align:center">Đang tải...</div>';
+
+  try {
+    const res = await fetch(requestUrl, {
+      headers: { 'Authorization': `Bearer ${token}` },
+      credentials: 'include'
+    });
+    const json = await res.json();
+    log(`📥 Trạng thái phản hồi tin nhắn: ${res.status}`, res.ok ? 'success' : 'error');
+    log(`📦 ${JSON.stringify(json).substring(0, 400)}`, 'data');
+
+    if (!res.ok) {
+      log(`❌ ${json.message || res.statusText}`, 'error');
+      scroll.innerHTML = `<div style="padding:20px;color:var(--danger)">${esc(json.message || res.statusText)}</div>`;
+      return;
+    }
+
+    const rawMsgs = Array.isArray(json.data)
+      ? json.data
+      : (Array.isArray(json?.data?.content) ? json.data.content : []);
+
+    if (!Array.isArray(json.data) && !Array.isArray(json?.data?.content)) {
+      log('⚠️ Dữ liệu tin nhắn không phải mảng, fallback về danh sách rỗng', 'warn');
+    }
+
+    log(`✓ Nhận được ${rawMsgs.length} tin nhắn`, 'success');
+
+    conv.messages = rawMsgs.map((m, index) => ({
+      id: m.id ?? `msg-${conversationId}-${index}`,
+      senderId: String(m.sender?.id ?? m.senderId ?? 'unknown'),
+      senderName: m.sender?.displayName ?? m.sender?.name ?? m.senderName ?? 'Không rõ',
+      content: extractMessageContent(m, ''),
+      mediaUrl: m.mediaUrl ?? null,
+      timestamp: parseApiDate(m.createdAt),
+      isCurrentUser: m.sender?.id == userId
+    })).sort((a, b) => a.timestamp - b.timestamp);
+
+    renderMessages(conv.messages);
+  } catch (err) {
+    log(`💥 ${err.message}`, 'error');
+    scroll.innerHTML = '<div style="padding:20px;color:var(--danger)">Lỗi mạng</div>';
+  }
+}
+
+// =====================================
+// RENDER MESSAGES
+// =====================================
+function renderMessages(messages) {
+  const scroll = document.getElementById('messages-scroll');
+  scroll.innerHTML = '';
+
+  if (!messages.length) {
+    scroll.innerHTML = '<div style="padding:20px;color:var(--text-muted);text-align:center;font-size:13px">Chưa có tin nhắn nào</div>';
+    return;
+  }
+
+  messages.forEach(appendMessageToDOM);
+  scrollToBottom();
+}
+
+function appendMessageToDOM(msg) {
+  const scroll = document.getElementById('messages-scroll');
+
+  const div = document.createElement('div');
+  div.className = 'msg ' + (msg.isCurrentUser ? 'me' : 'other');
+  div.dataset.msgId = msg.id;
+
+  const ts = formatMessageTime(msg.timestamp);
+  let inner = `<div class="sender">${esc(msg.senderName)}</div><div class="bubble">`;
+  if (msg.content) inner += `<div class="message-content">${esc(msg.content)}</div>`;
+  if (msg.mediaUrl) {
+    if (/\.(jpg|jpeg|png|gif|webp|bmp|svg)(\?|#|$)/i.test(msg.mediaUrl)) {
+      inner += `<img src="${esc(msg.mediaUrl)}" alt="attachment" />`;
+    } else if (/\.(mp4|webm|ogg|mov|m4v)(\?|#|$)/i.test(msg.mediaUrl)) {
+      inner += `<video src="${esc(msg.mediaUrl)}" controls></video>`;
+    } else {
+      inner += `<a href="${esc(msg.mediaUrl)}" target="_blank" rel="noopener">📎 Mở tệp</a>`;
+    }
+  }
+  inner += `</div><div class="ts">${ts}</div>`;
+  div.innerHTML = inner;
+  scroll.appendChild(div);
+}
+
+function scrollToBottom() {
+  const s = document.getElementById('messages-scroll');
+  s.scrollTop = s.scrollHeight;
+}
+
+function extractMessageContent(payload, fallback = '') {
+  if (!payload || typeof payload !== 'object') {
+    return fallback;
+  }
+
+  const directCandidates = [
+    payload.content,
+    payload.text,
+    payload.body,
+    payload.messageText,
+  ];
+
+  for (const value of directCandidates) {
+    if (typeof value === 'string' && value.trim()) {
+      return value.trim();
+    }
+  }
+
+  if (typeof payload.message === 'string' && payload.message.trim()) {
+    const raw = payload.message.trim();
+    const lower = raw.toLowerCase();
+    if (!['message sent successfully', 'success', 'ok'].includes(lower)) {
+      return raw;
+    }
+  }
+
+  return fallback;
+}
+
+// =====================================
+// SEND MESSAGE
+// =====================================
+document.getElementById('msg-input').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+});
+document.getElementById('btn-send').addEventListener('click', sendMessage);
+
+async function sendMessage() {
+  const token = getToken();
+  const conv  = state.selectedConversation;
+  const input = document.getElementById('msg-input');
+  const content = input.value.trim();
+
+  if (!token || !conv || !content) return;
+
+  const btn = document.getElementById('btn-send');
+  btn.disabled = true;
+  log(`📤 Gửi tin nhắn tới cuộc trò chuyện ${conv.id}: "${content}"`, 'info');
+
+  try {
+    const form = new FormData();
+    form.append('conversationId', conv.id);
+    form.append('message', content);
+
+    const res = await fetch(`${API}/messages`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}` },
+      credentials: 'include',
+      body: form
+    });
+    const json = await res.json();
+    log(`📥 Trạng thái gửi: ${res.status}`, res.ok ? 'success' : 'error');
+    log(`📦 ${JSON.stringify(json).substring(0, 300)}`, 'data');
+
+    if (!res.ok) {
+      log(`❌ ${json.message || res.statusText}`, 'error');
+      alert('Gửi thất bại: ' + (json.message || res.statusText));
+      return;
+    }
+
+    const userId = getUserId();
+    const msg = (json && typeof json.data === 'object' && json.data !== null) ? json.data : json;
+    const newMsg = {
+      id: msg?.id ?? Date.now(),
+      senderId: String(msg?.sender?.id ?? userId),
+      senderName: msg?.sender?.displayName ?? 'Tôi',
+      content: extractMessageContent(msg, content),
+      mediaUrl: msg?.mediaUrl ?? null,
+      timestamp: parseApiDate(msg?.createdAt),
+      isCurrentUser: true
+    };
+
+    conv.messages.push(newMsg);
+    appendMessageToDOM(newMsg);
+    scrollToBottom();
+    input.value = '';
+    log(`✓ Tin nhắn đã gửi - id: ${newMsg.id}`, 'success');
+  } catch (err) {
+    log(`💥 Lỗi gửi: ${err.message}`, 'error');
+  } finally {
+    btn.disabled = false;
+    input.focus();
+  }
+}
+
+// =====================================
+// WEBSOCKET / STOMP
+// =====================================
+function isWsReady() {
+  return Boolean(state.stompClient && state.stompClient.connected);
+}
+
+function publishChatView(destination, conversationId) {
+  const convId = Number(conversationId);
+  if (!Number.isFinite(convId)) {
+    return false;
+  }
+  if (!isWsReady()) {
+    log(`⏭️ Bỏ qua publish ${destination} vì WS chưa sẵn sàng`, 'ws');
+    return false;
+  }
+
+  state.stompClient.publish({
+    destination,
+    body: JSON.stringify(convId)
+  });
+  return true;
+}
+
+function sendChatViewStart(conversationId) {
+  const ok = publishChatView('/app/chat/view/start', conversationId);
+  if (ok) {
+    log(`👀 start viewing conversation ${conversationId}`, 'ws');
+  }
+}
+
+function sendChatViewStop(conversationId) {
+  const ok = publishChatView('/app/chat/view/stop', conversationId);
+  if (ok) {
+    log(`🛑 stop viewing conversation ${conversationId}`, 'ws');
+  }
+}
+
+function sendChatViewPing(conversationId) {
+  const ok = publishChatView('/app/chat/view/ping', conversationId);
+  if (ok) {
+    log(`💓 ping viewing conversation ${conversationId}`, 'ws');
+  }
+}
+
+function stopViewPingLoop() {
+  if (state.viewPingIntervalId) {
+    clearInterval(state.viewPingIntervalId);
+    state.viewPingIntervalId = null;
+  }
+}
+
+function startViewPingLoop(conversationId) {
+  stopViewPingLoop();
+
+  const convId = Number(conversationId);
+  if (!Number.isFinite(convId) || !isWsReady()) {
+    return;
+  }
+
+  state.viewPingIntervalId = setInterval(() => {
+    if (state.viewingConversationId !== convId) {
+      return;
+    }
+    sendChatViewPing(convId);
+  }, CHAT_VIEW_PING_INTERVAL_MS);
+}
+
+function syncViewingConversation(nextConversationId, options = {}) {
+  const forceStart = options.forceStart === true;
+  const nextIdNum = Number(nextConversationId);
+  const hasNext = Number.isFinite(nextIdNum);
+  const nextId = hasNext ? nextIdNum : null;
+  const prevId = state.viewingConversationId;
+  const sameConversation = prevId === nextId;
+
+  if (sameConversation && !forceStart) {
+    if (hasNext && isWsReady() && !state.viewPingIntervalId) {
+      startViewPingLoop(nextId);
+    }
+    if (!hasNext) {
+      stopViewPingLoop();
+    }
+    return;
+  }
+
+  if (prevId !== null && (!hasNext || prevId !== nextId)) {
+    sendChatViewStop(prevId);
+  }
+
+  state.viewingConversationId = nextId;
+
+  if (nextId !== null) {
+    if (isWsReady()) {
+      sendChatViewStart(nextId);
+      startViewPingLoop(nextId);
+    } else {
+      stopViewPingLoop();
+    }
+    return;
+  }
+
+  stopViewPingLoop();
+}
+
+function connectWs() {
+  const token = getToken();
+  if (!token) { log('⚠️ Cần token trước khi kết nối WS', 'warn'); return; }
+  if (state.stompClient?.active) { log('⚠️ WS đã kết nối rồi', 'warn'); return; }
+
+  log('🔌 Đang kết nối WebSocket...', 'ws');
+
+  const client = new StompJs.Client({
+    webSocketFactory: () => new SockJS(WS_URL),
+    connectHeaders: { Authorization: `Bearer ${token}` },
+    reconnectDelay: 5000,
+    heartbeatIncoming: 10000,
+    heartbeatOutgoing: 10000,
+  });
+
+  client.onConnect = () => {
+    log('✓ STOMP đã kết nối!', 'success');
+    updateWsStatus(true);
+
+    // Subscribe to personal message queue
+    const sub = client.subscribe('/user/queue/messages', (frame) => {
+      try {
+        const payload = JSON.parse(frame.body);
+        log(`📨 [WS] Nhận message realtime: ${JSON.stringify(payload).substring(0, 200)}`, 'ws');
+        handleIncomingMessage(payload);
+      } catch (err) {
+        log(`❌ Lỗi parse WS message: ${err.message}`, 'error');
+      }
+    });
+    state.wsSubscription = sub;
+    log(`📭 Đã subscribe /user/queue/messages (id=${sub.id})`, 'ws');
+
+    if (state.selectedConversation?.id != null) {
+      syncViewingConversation(Number(state.selectedConversation.id), { forceStart: true });
+    }
+  };
+
+  client.onWebSocketClose = () => {
+    log('🔌 WebSocket đã đóng', 'warn');
+    updateWsStatus(false);
+  };
+
+  client.onStompError = (frame) => {
+    log(`❌ Lỗi STOMP: ${frame.headers?.message}`, 'error');
+  };
+
+  client.onDisconnect = () => {
+    log('📴 STOMP disconnected', 'warn');
+    updateWsStatus(false);
+  };
+
+  client.activate();
+  state.stompClient = client;
+}
+
+function disconnectWs() {
+  syncViewingConversation(null);
+  if (state.wsSubscription) {
+    state.wsSubscription.unsubscribe();
+    state.wsSubscription = null;
+  }
+  state.stompClient?.deactivate();
+  state.stompClient = null;
+  updateWsStatus(false);
+  log('📴 WS ngắt kết nối', 'warn');
+}
+
+window.addEventListener('beforeunload', () => {
+  syncViewingConversation(null);
+});
+
+window.addEventListener('pagehide', () => {
+  syncViewingConversation(null);
+});
+
+// =====================================
+// HANDLE INCOMING REALTIME MESSAGE
+// =====================================
+function handleIncomingMessage(payload) {
+  const userId     = getUserId();
+  const convId     = Number(payload.conversationId);
+
+  if (!Number.isFinite(convId)) {
+    log(`⚠️ conversationId không hợp lệ: ${payload.conversationId}`, 'warn');
+    return;
+  }
+
+  const newMsg = {
+    id: payload.id,
+    senderId: String(payload.sender?.id ?? 'unknown'),
+    senderName: payload.sender?.displayName ?? 'Không rõ',
+    content: extractMessageContent(payload, ''),
+    mediaUrl: payload.mediaUrl ?? null,
+    timestamp: parseApiDate(payload.createdAt),
+    isCurrentUser: payload.sender?.id == userId
+  };
+
+  // Find or flag for reload
+  const targetConv = state.conversations.find(c => c.id === convId);
+  if (!targetConv) {
+    log(`⚠️ Conversation ${convId} chưa load -> reload danh sách`, 'warn');
+    loadConversations();
+    return;
+  }
+
+  // Update last message preview
+  targetConv.lastMessage     = newMsg.content || (newMsg.mediaUrl ? '📎 Tệp đính kèm' : 'Tin nhắn mới');
+  targetConv.lastMessageTime = newMsg.timestamp;
+
+  if (state.selectedConversation?.id === convId) {
+    targetConv.messages.push(newMsg);
+    appendMessageToDOM(newMsg);
+    scrollToBottom();
+    log('✓ Appended realtime message vào cuộc trò chuyện đang mở', 'success');
+  } else {
+    targetConv.unreadCount = (targetConv.unreadCount || 0) + 1;
+    log(`🔔 Unread +1 cho conversation ${convId}`, 'info');
+  }
+
+  // Re-sort sidebar
+  state.conversations.sort((a, b) => b.lastMessageTime - a.lastMessageTime);
+  renderConversationList();
+}
+
+// =====================================
+// HELPERS
+// =====================================
+function formatTime(date) {
+  if (!(date instanceof Date) || isNaN(date)) return '?';
+  const now  = new Date();
+  const diff = now - date;
+  const min  = Math.floor(diff / 60000);
+  const h    = Math.floor(diff / 3600000);
+  const d    = Math.floor(diff / 86400000);
+  if (min < 1)  return 'Vừa xong';
+  if (min < 60) return `${min}p`;
+  if (h < 24)   return `${h}h`;
+  if (d < 7)    return `${d}d`;
+  return date.toLocaleDateString('vi-VN');
+}
+
+function parseApiDate(value) {
+  const parsed = value ? new Date(value) : new Date();
+  return Number.isNaN(parsed.getTime()) ? new Date() : parsed;
+}
+
+function formatMessageTime(date) {
+  if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
+    return '--:--';
+  }
+  return date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+}
+
+function esc(str) {
+  if (!str) return '';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// =====================================
+// INIT
+// =====================================
+(function init() {
+  // Restore token and user from localStorage
+  const savedToken = localStorage.getItem('accessToken');
+  if (savedToken) {
+    state.token = savedToken;
+    log(`🔑 Token khôi phục từ localStorage: ${savedToken.substring(0,30)}...`, 'info');
+  }
+  const savedUser = localStorage.getItem('currentUser');
+  if (savedUser) {
+    try {
+      const u = JSON.parse(savedUser);
+      if (u?.id) {
+        state.currentUserId = u.id;
+        document.getElementById('input-userid').value = u.id;
+        log(`👤 User khôi phục: ${u.displayName || u.name} (id=${u.id})`, 'info');
+      }
+    } catch(_) {}
+  }
+  updateAuthUI();
+
+  if (savedToken) {
+    log('💡 Có token -> tự động tải dữ liệu tin nhắn...', 'info');
+    setTimeout(async () => {
+      if (!state.currentUserId) {
+        await hydrateCurrentUser();
+      }
+      await loadConversations();
+      connectWs();
+    }, 200);
+  }
+
+  log('🚀 Trình kiểm thử tin nhắn khởi động - KHÔNG dùng Angular', 'success');
+  log('ℹ️ Kiểm tra: kết nối WS -> load conv -> chọn conv -> nhắn tin', 'info');
+})();
+</script>
+<script src="/shared-header.js"></script>
+</body>
+</html>
