@@ -41,7 +41,6 @@ public class ChatViewStateServiceImpl implements ChatViewStateService {
         String convSessionKey = CHAT_VIEW_CONV_SESSIONS_KEY.formatted(username, conversationId);
         stringRedisTemplate.opsForSet().add(convSessionKey, sessionId);
         stringRedisTemplate.expire(convSessionKey, VIEW_TTL);
-
     }
 
     @Override
@@ -67,7 +66,6 @@ public class ChatViewStateServiceImpl implements ChatViewStateService {
         }
 
         stringRedisTemplate.delete(sessionKey);
-
     }
 
     @Override

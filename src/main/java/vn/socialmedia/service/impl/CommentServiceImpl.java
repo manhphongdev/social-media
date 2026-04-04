@@ -79,11 +79,13 @@ public class CommentServiceImpl implements CommentService {
         commentRepository.save(comment);
 
         List<String> receives = getNotificationCommentFollower(comment);
+        final Comment finalParent = parent;
 
         //broadcast comment to user
         receives.forEach(receive -> broadcastComment(CommentResponse.builder()
                         .id(comment.getId())
                         .text(comment.getText())
+                        .parentCommentId(finalParent == null ? null : finalParent.getId())
                         .user(CRUDUserResponse.builder()
                                 .id(user.getId())
                                 .name(user.getName())
@@ -131,12 +133,14 @@ public class CommentServiceImpl implements CommentService {
                         -> CommentResponse.builder()
                         .id(comment.getId())
                         .text(comment.getText())
+                        .parentCommentId(comment.getParentComment() == null ? null : comment.getParentComment().getId())
                         .user(CRUDUserResponse.builder()
                                 .name(comment.getUser().getName())
                                 .avatarUrl(comment.getUser().getAvatar())
                                 .id(comment.getUser().getId())
                                 .build())
                         .repliesTotal(comment.getReplies().size())
+                        .createdAt(comment.getCreatedAt())
                         .build())
                 .toList();
 

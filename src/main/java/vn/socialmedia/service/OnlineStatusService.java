@@ -7,5 +7,4 @@ public interface OnlineStatusService {
     void userDisconnected(String username);
 
     boolean isOnline(String username);
-
 }

@@ -80,6 +80,12 @@ public class ConversationServiceImpl implements ConversationService {
                                     .build())
                             .collect(Collectors.toList());
 
+                    Integer unreadCount = conversation.getParticipants().stream()
+                            .filter(cp -> cp.getUser().getId().equals(userId))
+                            .map(ConversationParticipant::getUnreadCount)
+                            .findFirst()
+                            .orElse(0);
+
                     return ConversationResponse.builder()
                             .id(conversation.getId())
                             .type(conversation.getType())
@@ -92,6 +98,7 @@ public class ConversationServiceImpl implements ConversationService {
                                                            .createdAt(lastMsg.getCreatedAt())
                                                            .conversationId(conversation.getId())
                                                            .build() : null)
+                            .unreadCount(unreadCount)
                             .build();
                 }).toList();
     }

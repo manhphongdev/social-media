@@ -14,6 +14,7 @@ import java.time.LocalDateTime;
 public class CommentResponse {
     private Long id;
     private String text;
+    private Long parentCommentId;
     private CRUDUserResponse user;
     private int repliesTotal;
     private LocalDateTime createdAt;

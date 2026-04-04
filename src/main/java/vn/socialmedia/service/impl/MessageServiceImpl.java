@@ -6,6 +6,7 @@ import org.springframework.messaging.simp.SimpMessageSendingOperations;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.socialmedia.common.security.SecurityUtil;
+import vn.socialmedia.dto.response.ConversationUnreadUpdateResponse;
 import vn.socialmedia.dto.request.MessageCreationRequest;
 import vn.socialmedia.dto.response.MessageResponse;
 import vn.socialmedia.dto.response.UserSummary;
@@ -18,12 +19,14 @@ import vn.socialmedia.model.User;
 import vn.socialmedia.repository.ConversationParticipantRepository;
 import vn.socialmedia.repository.ConversationRepo;
 import vn.socialmedia.repository.MessageRepo;
+import vn.socialmedia.repository.UserRepository;
 import vn.socialmedia.service.ChatViewStateService;
 import vn.socialmedia.service.MessageService;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -35,12 +38,13 @@ public class MessageServiceImpl implements MessageService {
     private final ConversationRepo conversationRepo;
     private final ConversationParticipantRepository conversationParticipantRepository;
     private final ChatViewStateService chatViewStateService;
+    private final UserRepository userRepository;
 
     @Transactional
     @Override
-    public void createMessage(MessageCreationRequest request) {
+    public MessageResponse createMessage(MessageCreationRequest request) {
         if (isEmptyMessageRequest(request)) {
-            return;
+            throw new BusinessException(ErrorCode.INVALID_REQUEST_BODY);
         }
 
         User currentUser = SecurityUtil.getUser();
@@ -75,10 +79,11 @@ public class MessageServiceImpl implements MessageService {
             boolean isViewing = chatViewStateService.isViewingConversation(participantUser.getUsername(), conversation.getId());
             if (isViewing) {
                 markSeenUpTo(participant, message);
+                publishUnreadState(participantUser, conversation.getId(), participant.getUnreadCount());
             } else {
                 incrementUnread(participant);
                 allRecipientsViewing = false;
-                incrementUnreadConversations(participantUser);
+                publishUnreadState(participantUser, conversation.getId(), participant.getUnreadCount());
             }
         }
 
@@ -95,6 +100,8 @@ public class MessageServiceImpl implements MessageService {
         for (String username : recipientUsernames) {
             broadcastMessage(response, username);
         }
+
+        return response;
     }
 
     @Override
@@ -110,6 +117,30 @@ public class MessageServiceImpl implements MessageService {
     @Override
     public int countUnreadConversations(long userId) {
         return conversationParticipantRepository.countUnreadConversations(userId);
+    }
+
+    @Transactional
+    @Override
+    public void markConversationSeenUpToLatest(String username, Long conversationId) {
+        if (username == null || username.isBlank() || conversationId == null || conversationId <= 0) {
+            return;
+        }
+
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new BusinessException(ErrorCode.UNAUTHENTICATED));
+
+        ConversationParticipant participant = conversationParticipantRepository
+                .findByConversation_IdAndUser_Id(conversationId, user.getId())
+                .orElse(null);
+
+        if (participant == null) {
+            log.warn("Skip mark seen: username={} does not belong to conversationId={}", username, conversationId);
+            return;
+        }
+
+        Optional<Message> latestMessage = messageRepo.findFirstByConversation_IdOrderByCreatedAtDescIdDesc(conversationId);
+        latestMessage.ifPresent(message -> markSeenUpTo(participant, message));
+        publishUnreadState(user, conversationId, participant.getUnreadCount());
     }
 
     private void broadcastMessage(MessageResponse messageResponse, String recipientUsername) {
@@ -185,8 +216,17 @@ public class MessageServiceImpl implements MessageService {
         conversationParticipantRepository.save(participant);
     }
 
-    private void incrementUnreadConversations(User user) {
+    private void publishUnreadState(User user, Long conversationId, Integer unreadCount) {
         int unreadConversations = countUnreadConversations(user.getId());
+        int safeUnreadCount = unreadCount == null ? 0 : unreadCount;
+
+        ConversationUnreadUpdateResponse payload = ConversationUnreadUpdateResponse.builder()
+                .conversationId(conversationId)
+                .unreadCount(safeUnreadCount)
+                .totalUnreadConversations(unreadConversations)
+                .build();
+
+        messageTemplate.convertAndSendToUser(user.getUsername(), "/queue/conversationUnread", payload);
         messageTemplate.convertAndSendToUser(user.getUsername(), "/queue/unreadConversations", unreadConversations);
     }
 }

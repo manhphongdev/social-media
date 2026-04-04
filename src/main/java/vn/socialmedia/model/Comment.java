@@ -7,7 +7,13 @@ import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Set;
 
-@EqualsAndHashCode(callSuper = true)
+@EqualsAndHashCode(callSuper = true, exclude = {
+        "user",
+        "post",
+        "parentComment",
+        "replies",
+        "reactions"
+})
 @Entity
 @Table(name = "comments")
 @Data

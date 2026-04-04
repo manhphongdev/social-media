@@ -160,6 +160,155 @@
             color: var(--text-muted);
         }
 
+        .comments-wrap {
+            margin-top: 10px;
+            border-top: 1px dashed var(--border);
+            padding-top: 10px;
+            display: grid;
+            gap: 8px;
+        }
+
+        .comments-panel {
+            display: grid;
+            gap: 8px;
+        }
+
+        .comments-panel.hidden {
+            display: none;
+        }
+
+        .comments-list {
+            display: grid;
+            gap: 8px;
+        }
+
+        .comment-item {
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 8px;
+            background: var(--surface2);
+        }
+
+        .comment-top {
+            display: flex;
+            justify-content: space-between;
+            gap: 8px;
+            margin-bottom: 4px;
+            font-size: 12px;
+        }
+
+        .comment-author {
+            font-weight: 700;
+        }
+
+        .comment-text {
+            white-space: pre-wrap;
+            line-height: 1.4;
+            font-size: 13px;
+        }
+
+        .comment-meta {
+            margin-top: 4px;
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .comment-actions {
+            margin-top: 6px;
+            display: flex;
+            gap: 8px;
+        }
+
+        .comment-reply-btn {
+            border: none;
+            background: transparent;
+            color: var(--accent);
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            padding: 0;
+        }
+
+        .reply-target {
+            border: 1px dashed var(--border);
+            border-radius: 8px;
+            padding: 6px 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            font-size: 12px;
+            color: var(--text-muted);
+            background: var(--surface2);
+        }
+
+        .reply-target.hidden {
+            display: none;
+        }
+
+        .comment-input {
+            width: 100%;
+            min-height: 62px;
+        }
+
+        .reaction-panel {
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px dashed var(--border);
+            display: grid;
+            gap: 8px;
+        }
+
+        .reaction-panel.hidden {
+            display: none;
+        }
+
+        .reaction-list {
+            display: grid;
+            gap: 6px;
+        }
+
+        .reaction-item {
+            border: 1px solid var(--border);
+            border-radius: 9px;
+            padding: 7px 8px;
+            background: var(--surface2);
+            font-size: 12px;
+        }
+
+        .notif-list {
+            display: grid;
+            gap: 8px;
+        }
+
+        .notif-item {
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 10px;
+            background: var(--surface2);
+            display: grid;
+            gap: 6px;
+        }
+
+        .notif-item.unread {
+            border-color: var(--accent2);
+            box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent2) 45%, transparent);
+        }
+
+        .notif-top {
+            display: flex;
+            justify-content: space-between;
+            gap: 8px;
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .notif-text {
+            font-size: 13px;
+            line-height: 1.4;
+            white-space: pre-wrap;
+        }
+
         .center {
             text-align: center;
         }
@@ -259,6 +408,23 @@
         </div>
     </div>
 
+    <div class="card">
+        <div class="head">
+            <h2>Notifications</h2>
+            <div class="row">
+                <button class="btn-gray" id="btn-notif-count">Unread count</button>
+                <button class="btn-gray" id="btn-notif-all">Tất cả</button>
+                <button class="btn-gray" id="btn-notif-unread">Chưa đọc</button>
+                <button class="btn-primary" id="btn-notif-more">Tải thêm</button>
+            </div>
+        </div>
+        <div class="body">
+            <p class="muted" id="notif-summary">Unread: 0</p>
+            <div class="notif-list" id="notif-list"></div>
+            <p class="muted center" id="notif-empty">Chưa có thông báo</p>
+        </div>
+    </div>
+
     <!-- LOG PANEL -->
     <div id="log-panel">
         <div id="log-header">
@@ -272,7 +438,20 @@
 
 <script>
     const API = 'http://localhost:8888';
-    const state = {token: null, nextCursor: null, hasNext: false};
+    const state = {
+        token: null,
+        nextCursor: null,
+        hasNext: false,
+        commentPages: {},
+        reactionPages: {},
+        commentItemsByPostId: {},
+        commentReplyTargets: {},
+        notifications: [],
+        notificationCursor: null,
+        notificationHasNext: false,
+        notificationMode: 'all',
+        unreadNotificationCount: 0
+    };
 
     function log(msg, level = 'info') {
         const out = document.getElementById('log-output');
@@ -317,12 +496,138 @@
         return {content: [], nextCursor: null, hasNext: false};
     }
 
+    function parseNotificationPage(payload) {
+        const page = payload?.data;
+        if (page && Array.isArray(page.content)) {
+            return {
+                content: page.content,
+                nextCursor: page.nextCursor || null,
+                hasNext: Boolean(page.hasNext),
+            };
+        }
+        return {content: [], nextCursor: null, hasNext: false};
+    }
+
+    function isNotificationRead(n) {
+        return n?.isRead === true || n?.read === true;
+    }
+
+    function updateNotificationSummary() {
+        const sum = document.getElementById('notif-summary');
+        if (!sum) return;
+        sum.textContent = `Unread: ${Number(state.unreadNotificationCount || 0)} · Mode: ${state.notificationMode}`;
+    }
+
+    function renderNotifications() {
+        const list = document.getElementById('notif-list');
+        const empty = document.getElementById('notif-empty');
+        const more = document.getElementById('btn-notif-more');
+        if (!list || !empty || !more) return;
+
+        list.innerHTML = '';
+        state.notifications.forEach((n) => {
+            const read = isNotificationRead(n);
+            const item = document.createElement('div');
+            item.className = `notif-item ${read ? '' : 'unread'}`;
+
+            const createdAt = n?.createdAt ? new Date(n.createdAt).toLocaleString('vi-VN') : '--';
+            item.innerHTML = `
+        <div class="notif-top">
+          <span>${esc(n?.type || 'INFO')} · ${esc(n?.targetType || '-')}</span>
+          <span>${esc(createdAt)}</span>
+        </div>
+        <div class="notif-text">${esc(n?.text || '')}</div>
+        <div class="row">
+          <span class="muted">targetId: ${Number(n?.targetId || 0) || '-'}</span>
+          ${read ? '<span class="muted">Đã đọc</span>' : `<button class="btn-primary" data-action="mark-notif-read" data-id="${n.id}">Đánh dấu đã đọc</button>`}
+        </div>
+      `;
+            list.appendChild(item);
+        });
+
+        empty.style.display = state.notifications.length ? 'none' : 'block';
+        more.disabled = !state.notificationHasNext;
+        updateNotificationSummary();
+    }
+
+    async function loadUnreadNotificationCount() {
+        if (!token()) throw new Error('Cần đăng nhập để tải unread notification count');
+        const res = await fetch(`${API}/notifications/unread-count`, {
+            headers: authHeaders(),
+            credentials: 'include',
+        });
+        const json = await res.json();
+        if (!res.ok) throw new Error(json?.message || res.statusText);
+        state.unreadNotificationCount = Number(json?.data || 0);
+        updateNotificationSummary();
+        log(`Unread notification count: ${state.unreadNotificationCount}`);
+    }
+
+    async function loadNotifications(mode = state.notificationMode, reset = false) {
+        if (!token()) throw new Error('Cần đăng nhập để tải notifications');
+
+        const nextMode = mode === 'unread' ? 'unread' : 'all';
+        if (reset || nextMode !== state.notificationMode) {
+            state.notificationMode = nextMode;
+            state.notificationCursor = null;
+            state.notificationHasNext = false;
+            state.notifications = [];
+        }
+
+        const qs = new URLSearchParams();
+        qs.set('limit', '20');
+        if (state.notificationCursor) {
+            qs.set('cursor', state.notificationCursor);
+        }
+        const endpoint = nextMode === 'unread' ? '/notifications/unread' : '/notifications';
+
+        const res = await fetch(`${API}${endpoint}?${qs.toString()}`, {
+            headers: authHeaders(),
+            credentials: 'include',
+        });
+        const json = await res.json();
+        if (!res.ok) throw new Error(json?.message || res.statusText);
+
+        const parsed = parseNotificationPage(json);
+        const existingIds = new Set(state.notifications.map(n => Number(n.id)));
+        const merged = state.notifications.concat(parsed.content.filter(n => !existingIds.has(Number(n.id))));
+        state.notifications = merged;
+        state.notificationCursor = parsed.nextCursor;
+        state.notificationHasNext = parsed.hasNext;
+        renderNotifications();
+        log(`Tải notifications mode=${nextMode}: +${parsed.content.length}, hasNext=${parsed.hasNext}`);
+    }
+
+    async function markNotificationAsRead(id) {
+        if (!token()) throw new Error('Cần đăng nhập để mark notification');
+        const res = await fetch(`${API}/notifications/mark-read?id=${encodeURIComponent(id)}`, {
+            method: 'PUT',
+            headers: authHeaders(),
+            credentials: 'include',
+        });
+        const json = await res.json();
+        if (!res.ok) throw new Error(json?.message || res.statusText);
+
+        state.notifications = state.notifications.map(n => Number(n.id) === Number(id) ? {...n, isRead: true} : n);
+        await loadUnreadNotificationCount();
+        if (state.notificationMode === 'unread') {
+            state.notifications = state.notifications.filter(n => !isNotificationRead(n));
+        }
+        renderNotifications();
+        log(`Đã mark notification ${id} as read`, 'success');
+    }
+
     function renderFeed(posts, append = false) {
         const box = document.getElementById('feed');
         const empty = document.getElementById('feed-empty');
         if (!append) box.innerHTML = '';
 
         posts.forEach((p) => {
+            const postId = Number(p?.postId ?? p?.id);
+            if (!Number.isInteger(postId) || postId <= 0) {
+                log(`Bỏ qua post có id không hợp lệ: ${JSON.stringify(p).substring(0, 120)}`, 'warn');
+                return;
+            }
             const author = p?.author?.displayName || p?.author?.name || `User ${p?.author?.id || ''}`.trim();
             const caption = p?.caption || '';
             const createdAt = p?.createdAt ? new Date(p.createdAt).toLocaleString('vi-VN') : '--';
@@ -349,12 +654,303 @@
       </div>
       <div class="post-caption">${esc(caption)}</div>
       ${mediaHtml}
-      <div class="meta">❤️ ${p?.reactionCount || 0} · 💬 ${p?.commentCount || 0} · ${esc(p?.privacy || '')}</div>
+      <div class="meta"><span data-post-reaction-count="${postId}">❤️ ${p?.reactionCount || 0}</span> · <span data-post-comment-count="${postId}">💬 ${p?.commentCount || 0}</span> · ${esc(p?.privacy || '')}</div>
+      <div class="comments-wrap">
+        <div class="row">
+          <button class="btn-gray" data-action="toggle-comments" data-post-id="${postId}">Xem bình luận</button>
+          <select data-post-reaction-type="${postId}">
+            <option value="LIKE">LIKE</option>
+            <option value="LOVE">LOVE</option>
+            <option value="HAHA">HAHA</option>
+            <option value="WOW">WOW</option>
+            <option value="SAD">SAD</option>
+            <option value="ANGRY">ANGRY</option>
+          </select>
+          <button class="btn-primary" data-action="send-reaction" data-post-id="${postId}">Thả reaction</button>
+          <button class="btn-gray" data-action="toggle-reactions" data-post-id="${postId}">Xem reactions</button>
+        </div>
+        <div class="comments-panel hidden" data-post-comments-panel="${postId}">
+          <div class="comments-list" data-post-comments-list="${postId}"></div>
+          <div class="row">
+            <button class="btn-gray" data-action="load-more-comments" data-post-id="${postId}">Tải thêm bình luận</button>
+          </div>
+          <div class="reply-target hidden" data-post-comment-reply="${postId}">
+            <span data-post-comment-reply-text="${postId}">Đang trả lời bình luận</span>
+            <button type="button" class="comment-reply-btn" data-action="clear-reply" data-post-id="${postId}">Bỏ trả lời</button>
+          </div>
+          <textarea class="comment-input" data-post-comment-input="${postId}" placeholder="Viết bình luận..."></textarea>
+          <div class="row">
+            <button class="btn-primary" data-action="send-comment" data-post-id="${postId}">Gửi bình luận</button>
+          </div>
+        </div>
+        <div class="reaction-panel hidden" data-post-reactions-panel="${postId}">
+          <div class="reaction-list" data-post-reactions-list="${postId}"></div>
+          <div class="row">
+            <button class="btn-gray" data-action="load-more-reactions" data-post-id="${postId}">Tải thêm reactions</button>
+          </div>
+        </div>
+      </div>
     `;
             box.appendChild(post);
         });
 
         empty.style.display = box.children.length ? 'none' : '';
+    }
+
+    function getReactionPage(postId) {
+        if (!state.reactionPages[postId]) {
+            state.reactionPages[postId] = {nextCursor: null, hasNext: false, loaded: false};
+        }
+        return state.reactionPages[postId];
+    }
+
+    function getCommentPage(postId) {
+        if (!state.commentPages[postId]) {
+            state.commentPages[postId] = {nextCursor: null, hasNext: false, loaded: false};
+        }
+        return state.commentPages[postId];
+    }
+
+    function getCommentItems(postId) {
+        if (!state.commentItemsByPostId[postId]) {
+            state.commentItemsByPostId[postId] = [];
+        }
+        return state.commentItemsByPostId[postId];
+    }
+
+    function setReplyTarget(postId, target) {
+        if (target) {
+            state.commentReplyTargets[postId] = target;
+        } else {
+            delete state.commentReplyTargets[postId];
+        }
+
+        const box = document.querySelector(`[data-post-comment-reply="${postId}"]`);
+        const textEl = document.querySelector(`[data-post-comment-reply-text="${postId}"]`);
+        if (!box || !textEl) return;
+
+        const current = state.commentReplyTargets[postId];
+        if (!current) {
+            box.classList.add('hidden');
+            textEl.textContent = 'Đang trả lời bình luận';
+            return;
+        }
+
+        box.classList.remove('hidden');
+        textEl.textContent = `Đang trả lời ${current.author}`;
+    }
+
+    function parseCommentPage(payload) {
+        const page = payload?.data;
+        if (page && Array.isArray(page.content)) {
+            return {
+                content: page.content,
+                nextCursor: page.nextCursor || null,
+                hasNext: Boolean(page.hasNext),
+            };
+        }
+        return {content: [], nextCursor: null, hasNext: false};
+    }
+
+    function renderComments(postId, comments, append = false) {
+        const list = document.querySelector(`[data-post-comments-list="${postId}"]`);
+        if (!list) return;
+        const items = getCommentItems(postId);
+        if (!append) {
+            state.commentItemsByPostId[postId] = comments.slice();
+        } else {
+            const existingIds = new Set(items.map(c => Number(c.id)));
+            const merged = items.concat(comments.filter(c => !existingIds.has(Number(c.id))));
+            state.commentItemsByPostId[postId] = merged;
+        }
+
+        list.innerHTML = '';
+
+        const source = getCommentItems(postId);
+        const byId = new Map();
+        source.forEach(c => {
+            byId.set(Number(c.id), {...c, children: []});
+        });
+
+        const roots = [];
+        source.forEach(c => {
+            const node = byId.get(Number(c.id));
+            const parentId = Number(c?.parentCommentId);
+            if (Number.isInteger(parentId) && parentId > 0 && byId.has(parentId)) {
+                byId.get(parentId).children.push(node);
+            } else {
+                roots.push(node);
+            }
+        });
+
+        function renderNode(node, depth) {
+            const author = node?.user?.name || `User ${node?.user?.id || ''}`.trim();
+            const createdAt = node?.createdAt ? new Date(node.createdAt).toLocaleString('vi-VN') : '--';
+            const item = document.createElement('div');
+            item.className = 'comment-item';
+            item.style.marginLeft = `${Math.min(depth, 6) * 16}px`;
+            item.innerHTML = `
+        <div class="comment-top">
+          <div class="comment-author">${esc(author)}</div>
+          <div class="muted">${esc(createdAt)}</div>
+        </div>
+        <div class="comment-text">${esc(node?.text || '')}</div>
+        <div class="comment-meta">↩️ replies: ${Number(node?.repliesTotal || 0)}</div>
+      `;
+
+            const actionRow = document.createElement('div');
+            actionRow.className = 'comment-actions';
+            const replyBtn = document.createElement('button');
+            replyBtn.type = 'button';
+            replyBtn.className = 'comment-reply-btn';
+            replyBtn.dataset.action = 'reply-comment';
+            replyBtn.dataset.postId = String(postId);
+            replyBtn.dataset.commentId = String(node.id);
+            replyBtn.textContent = 'Trả lời';
+            actionRow.appendChild(replyBtn);
+            item.appendChild(actionRow);
+
+            list.appendChild(item);
+            node.children.forEach(child => renderNode(child, depth + 1));
+        }
+
+        roots.forEach(root => renderNode(root, 0));
+
+        if (!list.children.length) {
+            list.innerHTML = '<p class="muted">Chưa có bình luận</p>';
+        }
+
+        const page = getCommentPage(postId);
+        const loadMore = document.querySelector(`[data-action="load-more-comments"][data-post-id="${postId}"]`);
+        if (loadMore) {
+            loadMore.disabled = !page.hasNext;
+        }
+    }
+
+    function parseReactionPage(payload) {
+        const page = payload?.data;
+        if (page && Array.isArray(page.content)) {
+            return {
+                content: page.content,
+                nextCursor: page.nextCursor || null,
+                hasNext: Boolean(page.hasNext),
+            };
+        }
+        return {content: [], nextCursor: null, hasNext: false};
+    }
+
+    function renderReactions(postId, reactions, append = false) {
+        const list = document.querySelector(`[data-post-reactions-list="${postId}"]`);
+        if (!list) return;
+        if (!append) list.innerHTML = '';
+
+        reactions.forEach((r) => {
+            const author = r?.user?.name || `User ${r?.user?.id || ''}`.trim();
+            const item = document.createElement('div');
+            item.className = 'reaction-item';
+            item.textContent = `${r?.type || 'LIKE'} · ${author}`;
+            list.appendChild(item);
+        });
+
+        if (!list.children.length) {
+            list.innerHTML = '<p class="muted">Chưa có reaction</p>';
+        }
+
+        const page = getReactionPage(postId);
+        const loadMore = document.querySelector(`[data-action="load-more-reactions"][data-post-id="${postId}"]`);
+        if (loadMore) {
+            loadMore.disabled = !page.hasNext;
+        }
+    }
+
+    async function loadReactions(postId, reset = false) {
+        if (!token()) throw new Error('Cần đăng nhập để xem reactions');
+        const page = getReactionPage(postId);
+        const qs = new URLSearchParams();
+        qs.set('postId', String(postId));
+        qs.set('limit', '20');
+        if (!reset && page.nextCursor) qs.set('cursor', page.nextCursor);
+
+        const res = await fetch(`${API}/reactions?${qs.toString()}`, {
+            headers: authHeaders(),
+            credentials: 'include',
+        });
+        const json = await res.json();
+        if (!res.ok) throw new Error(json?.message || res.statusText);
+
+        const parsed = parseReactionPage(json);
+        page.nextCursor = parsed.nextCursor;
+        page.hasNext = parsed.hasNext;
+        page.loaded = true;
+        renderReactions(postId, parsed.content, !reset);
+        log(`Tải reactions post=${postId}: ${parsed.content.length}, hasNext=${parsed.hasNext}`);
+    }
+
+    async function createReaction(postId, reactionType) {
+        if (!token()) throw new Error('Cần đăng nhập để thả reaction');
+
+        const res = await fetch(`${API}/reactions/create`, {
+            method: 'POST',
+            headers: authHeaders({'Content-Type': 'application/json'}),
+            credentials: 'include',
+            body: JSON.stringify({postId, reactionType}),
+        });
+        const json = await res.json();
+        if (!res.ok) throw new Error(json?.message || res.statusText);
+
+        await loadFeed(true);
+        const panel = document.querySelector(`[data-post-reactions-panel="${postId}"]`);
+        if (panel && !panel.classList.contains('hidden')) {
+            await loadReactions(postId, true);
+        }
+        log(`Đã thả reaction ${reactionType} cho post=${postId}`, 'success');
+    }
+
+    async function loadComments(postId, reset = false) {
+        if (!token()) throw new Error('Cần đăng nhập để xem bình luận');
+        const page = getCommentPage(postId);
+        const qs = new URLSearchParams();
+        qs.set('limit', '10');
+        if (!reset && page.nextCursor) qs.set('cursor', page.nextCursor);
+
+        const res = await fetch(`${API}/comments/${postId}?${qs.toString()}`, {
+            headers: authHeaders(),
+            credentials: 'include',
+        });
+        const json = await res.json();
+        if (!res.ok) throw new Error(json?.message || res.statusText);
+
+        const parsed = parseCommentPage(json);
+        page.nextCursor = parsed.nextCursor;
+        page.hasNext = parsed.hasNext;
+        page.loaded = true;
+        renderComments(postId, parsed.content, !reset);
+        log(`Tải comments post=${postId}: ${parsed.content.length}, hasNext=${parsed.hasNext}`);
+    }
+
+    async function createComment(postId, text, commentParentId = null) {
+        if (!token()) throw new Error('Cần đăng nhập để bình luận');
+        if (!text || !text.trim()) throw new Error('Nội dung bình luận không được trống');
+
+        const res = await fetch(`${API}/comments/create`, {
+            method: 'POST',
+            headers: authHeaders({'Content-Type': 'application/json'}),
+            credentials: 'include',
+            body: JSON.stringify({
+                text: text.trim(),
+                postId: postId,
+                commentParentId,
+            }),
+        });
+        const json = await res.json();
+        if (!res.ok) throw new Error(json?.message || res.statusText);
+
+        const input = document.querySelector(`[data-post-comment-input="${postId}"]`);
+        if (input) input.value = '';
+        setReplyTarget(postId, null);
+        await loadComments(postId, true);
+        await loadFeed(true);
+        log(`Tạo comment thành công cho post=${postId}`, 'success');
     }
 
     async function createFeed() {
@@ -422,25 +1018,134 @@
     document.getElementById('btn-create').addEventListener('click', () => run(createFeed));
     document.getElementById('btn-refresh').addEventListener('click', () => run(() => loadFeed(true)));
     document.getElementById('btn-more').addEventListener('click', () => run(() => loadFeed(false)));
+    document.getElementById('btn-notif-count').addEventListener('click', () => run(loadUnreadNotificationCount));
+    document.getElementById('btn-notif-all').addEventListener('click', () => run(() => loadNotifications('all', true)));
+    document.getElementById('btn-notif-unread').addEventListener('click', () => run(() => loadNotifications('unread', true)));
+    document.getElementById('btn-notif-more').addEventListener('click', () => run(() => loadNotifications(state.notificationMode, false)));
+
+    document.getElementById('feed').addEventListener('click', (event) => {
+        const btn = event.target.closest('button[data-action][data-post-id]');
+        if (!btn) return;
+
+        const action = btn.dataset.action;
+        const postId = Number(btn.dataset.postId);
+        if (!Number.isInteger(postId) || postId <= 0) {
+            log(`postId không hợp lệ: ${btn.dataset.postId}`, 'warn');
+            return;
+        }
+
+        if (action === 'toggle-comments') {
+            const panel = document.querySelector(`[data-post-comments-panel="${postId}"]`);
+            if (!panel) return;
+            const opening = panel.classList.contains('hidden');
+            panel.classList.toggle('hidden', !opening);
+            btn.textContent = opening ? 'Ẩn bình luận' : 'Xem bình luận';
+            if (opening && !getCommentPage(postId).loaded) {
+                run(() => loadComments(postId, true));
+            }
+            return;
+        }
+
+        if (action === 'load-more-comments') {
+            run(() => loadComments(postId, false));
+            return;
+        }
+
+        if (action === 'send-comment') {
+            const input = document.querySelector(`[data-post-comment-input="${postId}"]`);
+            const text = input ? input.value : '';
+            const target = state.commentReplyTargets[postId] || null;
+            run(() => createComment(postId, text, target ? target.commentId : null));
+            return;
+        }
+
+        if (action === 'reply-comment') {
+            const commentId = Number(btn.dataset.commentId);
+            if (!Number.isInteger(commentId) || commentId <= 0) {
+                return;
+            }
+            const allComments = getCommentItems(postId);
+            const targetComment = allComments.find(c => Number(c.id) === commentId);
+            const author = targetComment?.user?.name || `#${commentId}`;
+            setReplyTarget(postId, {commentId, author});
+            const input = document.querySelector(`[data-post-comment-input="${postId}"]`);
+            if (input) input.focus();
+            return;
+        }
+
+        if (action === 'clear-reply') {
+            setReplyTarget(postId, null);
+            return;
+        }
+
+        if (action === 'send-reaction') {
+            const select = document.querySelector(`[data-post-reaction-type="${postId}"]`);
+            const reactionType = select ? select.value : 'LIKE';
+            run(() => createReaction(postId, reactionType));
+            return;
+        }
+
+        if (action === 'toggle-reactions') {
+            const panel = document.querySelector(`[data-post-reactions-panel="${postId}"]`);
+            if (!panel) return;
+            const opening = panel.classList.contains('hidden');
+            panel.classList.toggle('hidden', !opening);
+            btn.textContent = opening ? 'Ẩn reactions' : 'Xem reactions';
+            if (opening && !getReactionPage(postId).loaded) {
+                run(() => loadReactions(postId, true));
+            }
+            return;
+        }
+
+        if (action === 'load-more-reactions') {
+            run(() => loadReactions(postId, false));
+        }
+    });
+
+    document.getElementById('notif-list').addEventListener('click', (event) => {
+        const btn = event.target.closest('button[data-action="mark-notif-read"][data-id]');
+        if (!btn) return;
+        const id = Number(btn.dataset.id);
+        if (!Number.isInteger(id) || id <= 0) {
+            return;
+        }
+        run(() => markNotificationAsRead(id));
+    });
 
     window.addEventListener('shared-auth-changed', function (e) {
         var detail = e && e.detail ? e.detail : {};
         if (detail.loggedIn) {
             state.token = detail.token || localStorage.getItem('accessToken');
             run(() => loadFeed(true));
+            run(() => loadUnreadNotificationCount());
+            run(() => loadNotifications('all', true));
             return;
         }
         state.token = null;
         state.nextCursor = null;
         state.hasNext = false;
+        state.commentPages = {};
+        state.reactionPages = {};
+        state.commentItemsByPostId = {};
+        state.commentReplyTargets = {};
+        state.notifications = [];
+        state.notificationCursor = null;
+        state.notificationHasNext = false;
+        state.notificationMode = 'all';
+        state.unreadNotificationCount = 0;
         renderFeed([], false);
+        renderNotifications();
         document.getElementById('btn-more').disabled = true;
     });
 
     (function init() {
         const tk = localStorage.getItem('accessToken');
         if (tk) state.token = tk;
-        if (state.token) run(() => loadFeed(true));
+        if (state.token) {
+            run(() => loadFeed(true));
+            run(() => loadUnreadNotificationCount());
+            run(() => loadNotifications('all', true));
+        }
         else log('Sẵn sàng. Đăng nhập để tải feed.');
     })();
 </script>

@@ -47,13 +47,14 @@
   }
 
   var wsClient = null;
-  var wsSub = null;
-  var unreadConvIds = new Set();
+  var wsUnreadSub = null;
+  var wsTotalUnreadSub = null;
+  var totalUnreadConversations = 0;
 
   function updateUnreadConvBadge() {
     var badge = document.getElementById('shared-unread-conv-badge');
     if (!badge) return;
-    var total = unreadConvIds.size;
+    var total = Math.max(0, Number(totalUnreadConversations) || 0);
     badge.textContent = String(total);
     if (total > 0) {
       badge.classList.remove('hidden');
@@ -81,15 +82,10 @@
     })
       .then(function(res) { return res.json(); })
       .then(function(json) {
-        var count = json?.data || 0;
-        if (count > 0) {
-          headerLog('API total-unread: ' + count, 'info');
-          var existing = unreadConvIds.size;
-          if (count > existing) {
-            unreadConvIds.add('initial');
-            updateUnreadConvBadge();
-          }
-        }
+        var count = Number(json?.data || 0);
+        totalUnreadConversations = Number.isFinite(count) && count > 0 ? count : 0;
+        headerLog('API total-unread: ' + totalUnreadConversations, 'info');
+        updateUnreadConvBadge();
       })
       .catch(function(e) {
         headerLog('API total-unread error: ' + e.message, 'warn');
@@ -122,9 +118,6 @@
       headerLog('STOMP chưa ready', 'error');
       return;
     }
-    var savedUser = localStorage.getItem('currentUser');
-    var currentUserId = savedUser ? JSON.parse(savedUser).id : null;
-
     wsClient = new StompJs.Client({
       webSocketFactory: function() { return new SockJS('/ws'); },
       connectHeaders: { Authorization: 'Bearer ' + localStorage.getItem('accessToken') },
@@ -134,18 +127,28 @@
     });
 
     wsClient.onConnect = function() {
-      headerLog('WS connected! Subscribe /user/queue/messages', 'success');
-      wsSub = wsClient.subscribe('/user/queue/messages', function(frame) {
+      headerLog('WS connected! Subscribe unread queues', 'success');
+      wsUnreadSub = wsClient.subscribe('/user/queue/conversationUnread', function(frame) {
         try {
           var payload = JSON.parse(frame.body);
-          var convId = Number(payload.conversationId);
-          if (!convId || convId <= 0) return;
-          if (payload.sender?.id == currentUserId) return;
-          headerLog('WS nhận tin nhắn mới - conv #' + convId, 'info');
-          unreadConvIds.add(convId);
+          var total = Number(payload && payload.totalUnreadConversations);
+          if (!Number.isFinite(total)) return;
+          totalUnreadConversations = Math.max(0, total);
+          headerLog('WS unread sync total=' + totalUnreadConversations, 'ws');
           updateUnreadConvBadge();
         } catch(e) {
-          headerLog('WS parse error: ' + e.message, 'error');
+          headerLog('WS unread parse error: ' + e.message, 'error');
+        }
+      });
+
+      wsTotalUnreadSub = wsClient.subscribe('/user/queue/unreadConversations', function(frame) {
+        try {
+          var total = Number(frame.body);
+          if (!Number.isFinite(total)) return;
+          totalUnreadConversations = Math.max(0, total);
+          updateUnreadConvBadge();
+        } catch(e) {
+          headerLog('WS total-unread parse error: ' + e.message, 'error');
         }
       });
     };
@@ -162,9 +165,10 @@
   }
 
   function disconnectWsForUnread() {
-    if (wsSub) { wsSub.unsubscribe(); wsSub = null; }
+    if (wsUnreadSub) { wsUnreadSub.unsubscribe(); wsUnreadSub = null; }
+    if (wsTotalUnreadSub) { wsTotalUnreadSub.unsubscribe(); wsTotalUnreadSub = null; }
     if (wsClient) { wsClient.deactivate(); wsClient = null; }
-    unreadConvIds.clear();
+    totalUnreadConversations = 0;
     updateUnreadConvBadge();
   }
 
@@ -315,8 +319,7 @@
       var msgLink = slot.querySelector('[data-nav="messages"]');
       if (msgLink) {
         msgLink.addEventListener('click', function() {
-          unreadConvIds.clear();
-          updateUnreadConvBadge();
+          fetchInitialUnreadCount();
         });
       }
     })

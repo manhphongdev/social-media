@@ -11,7 +11,15 @@ import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.Set;
 
-@EqualsAndHashCode(callSuper = true)
+@EqualsAndHashCode(callSuper = true, exclude = {
+        "roles",
+        "posts",
+        "following",
+        "followers",
+        "notifications",
+        "blocking",
+        "blockedBy"
+})
 @SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor

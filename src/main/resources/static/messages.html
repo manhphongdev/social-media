@@ -99,7 +99,7 @@
     .msg video { max-width: 260px; border-radius: 10px; }
 
     #msg-input-area {
-      display: flex; align-items: center; gap: 10px;
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
       padding: 12px 16px; border-top: 1px solid var(--border); background: var(--surface);
       flex-shrink: 0;
     }
@@ -116,6 +116,22 @@
     }
     #btn-send:hover { opacity: .85; }
     #btn-send:disabled { opacity: .4; cursor: not-allowed; }
+    #btn-attach {
+      width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--border);
+      background: var(--surface2); color: var(--text); cursor: pointer; font-size: 18px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    #btn-attach:disabled { opacity: .4; cursor: not-allowed; }
+    #msg-file { display: none; }
+    #msg-file-preview {
+      width: 100%; display: flex; align-items: center; justify-content: space-between;
+      border: 1px dashed var(--border); background: var(--surface2); border-radius: 10px;
+      padding: 8px 10px; font-size: 12px; color: var(--text-muted);
+    }
+    #btn-file-remove {
+      border: none; background: transparent; color: var(--danger); cursor: pointer;
+      font-size: 12px; font-weight: 700;
+    }
 
     /* ===== LOG PANEL ===== */
     #log-panel {
@@ -179,8 +195,14 @@
         </div>
         <div id="messages-scroll"></div>
         <div id="msg-input-area">
+          <input type="file" id="msg-file" accept="image/*,video/*" multiple />
+          <button id="btn-attach" disabled title="Gửi tệp">📎</button>
           <input type="text" id="msg-input" placeholder="Nhập tin nhắn..." />
           <button id="btn-send" disabled>Gửi</button>
+          <div id="msg-file-preview" class="hidden">
+            <span id="msg-file-name">-</span>
+            <button id="btn-file-remove" type="button">Bỏ tệp</button>
+          </div>
         </div>
       </div>
     </div>
@@ -214,9 +236,11 @@ let state = {
   selectedConversation: null,
   stompClient: null,
   wsConnected: false,
-  wsSubscription: null,
+  wsMessageSubscription: null,
+  wsUnreadSubscription: null,
   viewingConversationId: null,
-  viewPingIntervalId: null
+  viewPingIntervalId: null,
+  pendingMessageFiles: []
 };
 
 // =====================================
@@ -273,6 +297,7 @@ function updateWsStatus(connected) {
   el.textContent = connected ? 'WS: Đã kết nối' : 'WS: Ngắt kết nối';
   el.className = connected ? 'connected' : 'disconnected';
   document.getElementById('btn-send').disabled = !state.selectedConversation;
+  document.getElementById('btn-attach').disabled = !state.selectedConversation;
 }
 
 async function hydrateCurrentUser() {
@@ -371,7 +396,7 @@ async function loadConversations() {
         lastMessage: lm?.message?.trim() || (lm?.mediaUrl ? '📎 Tệp đính kèm' : 'Bắt đầu cuộc trò chuyện'),
         lastMessageTime: parseApiDate(lm?.createdAt || c.lastMessageAt),
         messages: [],
-        unreadCount: 0
+        unreadCount: Number(c.unreadCount ?? 0)
       };
     }).sort((a, b) => b.lastMessageTime - a.lastMessageTime);
 
@@ -415,7 +440,7 @@ function renderConversationList() {
         <div class="conv-name">${esc(conv.userName)}</div>
         <div class="conv-last">${esc(conv.lastMessage)}</div>
       </div>
-      <div class="conv-time">${timeStr}</div>
+      <div class="conv-time">${timeStr}${conv.unreadCount > 0 ? ` • ${conv.unreadCount}` : ''}</div>
     `;
 
     el.addEventListener('click', () => selectConversation(conv));
@@ -449,6 +474,7 @@ async function selectConversation(conv) {
   document.getElementById('chat-status').textContent = conv.isOnline ? '🟢 Đang hoạt động' : '⚪ Không hoạt động';
 
   document.getElementById('btn-send').disabled = false;
+  document.getElementById('btn-attach').disabled = false;
 
   log(`➡️ Đã chọn cuộc trò chuyện id=${conv.id} (${conv.userName})`, 'info');
 
@@ -603,61 +629,189 @@ document.getElementById('msg-input').addEventListener('keydown', (e) => {
   }
 });
 document.getElementById('btn-send').addEventListener('click', sendMessage);
+document.getElementById('btn-attach').addEventListener('click', () => {
+  if (!state.selectedConversation) {
+    return;
+  }
+  document.getElementById('msg-file').click();
+});
+document.getElementById('msg-file').addEventListener('change', (event) => {
+  state.pendingMessageFiles = Array.from(event.target.files || []);
+  updatePendingFilePreview();
+});
+document.getElementById('btn-file-remove').addEventListener('click', () => {
+  state.pendingMessageFiles = [];
+  document.getElementById('msg-file').value = '';
+  updatePendingFilePreview();
+});
+
+function updatePendingFilePreview() {
+  const preview = document.getElementById('msg-file-preview');
+  const nameEl = document.getElementById('msg-file-name');
+  const files = state.pendingMessageFiles;
+  if (!files.length) {
+    preview.classList.add('hidden');
+    nameEl.textContent = '-';
+    return;
+  }
+
+  if (files.length === 1) {
+    const file = files[0];
+    nameEl.textContent = `${file.name} (${Math.ceil(file.size / 1024)} KB)`;
+  } else {
+    const firstNames = files.slice(0, 2).map(file => file.name).join(', ');
+    const suffix = files.length > 2 ? ` +${files.length - 2} tệp` : '';
+    nameEl.textContent = `${files.length} tệp: ${firstNames}${suffix}`;
+  }
+  preview.classList.remove('hidden');
+}
+
+async function uploadPendingMessageFile(file) {
+  const token = getToken();
+  const contentType = file?.type || 'application/octet-stream';
+  log(`☁️ Xin pre-signed URL cho tệp ${file.name}`, 'info');
+
+  const preSignRes = await fetch(`${API}/uploads/pre-signed`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    },
+    credentials: 'include',
+    body: JSON.stringify({
+      contentType,
+      fileName: file.name,
+      fileSize: file.size
+    })
+  });
+  const preSignJson = await preSignRes.json();
+  if (!preSignRes.ok) {
+    throw new Error(preSignJson?.message || preSignRes.statusText || 'Không lấy được pre-signed URL');
+  }
+
+  const uploadData = preSignJson?.data || {};
+  const uploadUrl = uploadData.uploadUrl;
+  const fileUrl = uploadData.fileUrl;
+  const method = uploadData.method || 'PUT';
+  const uploadHeaders = uploadData.headers || { 'Content-Type': contentType };
+
+  if (!uploadUrl || !fileUrl) {
+    throw new Error('Payload upload không hợp lệ');
+  }
+
+  log(`⬆️ Đang upload tệp: ${file.name}`, 'info');
+  const uploadRes = await fetch(uploadUrl, {
+    method,
+    headers: uploadHeaders,
+    body: file
+  });
+
+  if (!uploadRes.ok) {
+    throw new Error(`Upload tệp thất bại (${uploadRes.status})`);
+  }
+
+  log('✅ Upload tệp thành công', 'success');
+  return fileUrl;
+}
+
+async function submitMessageRequest({ token, conversationId, message, mediaUrl }) {
+  const form = new FormData();
+  form.append('conversationId', conversationId);
+  if (message) {
+    form.append('message', message);
+  }
+  if (mediaUrl) {
+    form.append('mediaUrl', mediaUrl);
+  }
+
+  const res = await fetch(`${API}/messages`, {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${token}` },
+    credentials: 'include',
+    body: form
+  });
+
+  const json = await res.json();
+  log(`📥 Trạng thái gửi: ${res.status}`, res.ok ? 'success' : 'error');
+  log(`📦 ${JSON.stringify(json).substring(0, 300)}`, 'data');
+
+  if (!res.ok) {
+    throw new Error(json?.message || res.statusText || 'Gửi tin nhắn thất bại');
+  }
+
+  return (json && typeof json.data === 'object' && json.data !== null) ? json.data : json;
+}
 
 async function sendMessage() {
   const token = getToken();
   const conv  = state.selectedConversation;
   const input = document.getElementById('msg-input');
   const content = input.value.trim();
+  const pendingFiles = [...state.pendingMessageFiles];
 
-  if (!token || !conv || !content) return;
+  if (!token || !conv || (!content && pendingFiles.length === 0)) return;
 
   const btn = document.getElementById('btn-send');
+  const attachBtn = document.getElementById('btn-attach');
   btn.disabled = true;
-  log(`📤 Gửi tin nhắn tới cuộc trò chuyện ${conv.id}: "${content}"`, 'info');
+  attachBtn.disabled = true;
+  log(`📤 Gửi tin nhắn tới cuộc trò chuyện ${conv.id}`, 'info');
 
   try {
-    const form = new FormData();
-    form.append('conversationId', conv.id);
-    form.append('message', content);
+    const userId = getUserId();
+    const sentMessages = [];
 
-    const res = await fetch(`${API}/messages`, {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${token}` },
-      credentials: 'include',
-      body: form
-    });
-    const json = await res.json();
-    log(`📥 Trạng thái gửi: ${res.status}`, res.ok ? 'success' : 'error');
-    log(`📦 ${JSON.stringify(json).substring(0, 300)}`, 'data');
-
-    if (!res.ok) {
-      log(`❌ ${json.message || res.statusText}`, 'error');
-      alert('Gửi thất bại: ' + (json.message || res.statusText));
-      return;
+    if (pendingFiles.length === 0) {
+      const msg = await submitMessageRequest({
+        token,
+        conversationId: conv.id,
+        message: content,
+        mediaUrl: null
+      });
+      sentMessages.push({ msg, fallbackContent: content, fallbackMediaUrl: null });
+    } else {
+      for (let i = 0; i < pendingFiles.length; i++) {
+        const file = pendingFiles[i];
+        const fileUrl = await uploadPendingMessageFile(file);
+        const messageText = i === 0 ? content : '';
+        const msg = await submitMessageRequest({
+          token,
+          conversationId: conv.id,
+          message: messageText,
+          mediaUrl: fileUrl
+        });
+        sentMessages.push({ msg, fallbackContent: messageText, fallbackMediaUrl: fileUrl });
+      }
     }
 
-    const userId = getUserId();
-    const msg = (json && typeof json.data === 'object' && json.data !== null) ? json.data : json;
-    const newMsg = {
-      id: msg?.id ?? Date.now(),
-      senderId: String(msg?.sender?.id ?? userId),
-      senderName: msg?.sender?.displayName ?? 'Tôi',
-      content: extractMessageContent(msg, content),
-      mediaUrl: msg?.mediaUrl ?? null,
-      timestamp: parseApiDate(msg?.createdAt),
-      isCurrentUser: true
-    };
+    for (const item of sentMessages) {
+      const msg = item.msg;
+      const newMsg = {
+        id: msg?.id ?? Date.now(),
+        senderId: String(msg?.sender?.id ?? userId),
+        senderName: msg?.sender?.displayName ?? 'Tôi',
+        content: extractMessageContent(msg, item.fallbackContent),
+        mediaUrl: msg?.mediaUrl ?? item.fallbackMediaUrl ?? null,
+        timestamp: parseApiDate(msg?.createdAt),
+        isCurrentUser: true
+      };
 
-    conv.messages.push(newMsg);
-    appendMessageToDOM(newMsg);
+      conv.messages.push(newMsg);
+      appendMessageToDOM(newMsg);
+    }
+
     scrollToBottom();
     input.value = '';
-    log(`✓ Tin nhắn đã gửi - id: ${newMsg.id}`, 'success');
+    state.pendingMessageFiles = [];
+    document.getElementById('msg-file').value = '';
+    updatePendingFilePreview();
+    log(`✓ Đã gửi ${sentMessages.length} tin nhắn`, 'success');
   } catch (err) {
     log(`💥 Lỗi gửi: ${err.message}`, 'error');
+    alert('Gửi thất bại: ' + err.message);
   } finally {
-    btn.disabled = false;
+    btn.disabled = !state.selectedConversation;
+    attachBtn.disabled = !state.selectedConversation;
     input.focus();
   }
 }
@@ -671,7 +825,7 @@ function isWsReady() {
 
 function publishChatView(destination, conversationId) {
   const convId = Number(conversationId);
-  if (!Number.isFinite(convId)) {
+  if (!Number.isInteger(convId) || convId <= 0) {
     return false;
   }
   if (!isWsReady()) {
@@ -733,7 +887,7 @@ function startViewPingLoop(conversationId) {
 function syncViewingConversation(nextConversationId, options = {}) {
   const forceStart = options.forceStart === true;
   const nextIdNum = Number(nextConversationId);
-  const hasNext = Number.isFinite(nextIdNum);
+  const hasNext = Number.isInteger(nextIdNum) && nextIdNum > 0;
   const nextId = hasNext ? nextIdNum : null;
   const prevId = state.viewingConversationId;
   const sameConversation = prevId === nextId;
@@ -787,7 +941,7 @@ function connectWs() {
     updateWsStatus(true);
 
     // Subscribe to personal message queue
-    const sub = client.subscribe('/user/queue/messages', (frame) => {
+    const messageSub = client.subscribe('/user/queue/messages', (frame) => {
       try {
         const payload = JSON.parse(frame.body);
         log(`📨 [WS] Nhận message realtime: ${JSON.stringify(payload).substring(0, 200)}`, 'ws');
@@ -796,10 +950,21 @@ function connectWs() {
         log(`❌ Lỗi parse WS message: ${err.message}`, 'error');
       }
     });
-    state.wsSubscription = sub;
-    log(`📭 Đã subscribe /user/queue/messages (id=${sub.id})`, 'ws');
+    state.wsMessageSubscription = messageSub;
+    log(`📭 Đã subscribe /user/queue/messages (id=${messageSub.id})`, 'ws');
 
-    if (state.selectedConversation?.id != null) {
+    const unreadSub = client.subscribe('/user/queue/conversationUnread', (frame) => {
+      try {
+        const payload = JSON.parse(frame.body);
+        handleConversationUnreadUpdate(payload);
+      } catch (err) {
+        log(`❌ Lỗi parse WS unread update: ${err.message}`, 'error');
+      }
+    });
+    state.wsUnreadSubscription = unreadSub;
+    log(`📭 Đã subscribe /user/queue/conversationUnread (id=${unreadSub.id})`, 'ws');
+
+    if (document.visibilityState === 'visible' && state.selectedConversation?.id != null) {
       syncViewingConversation(Number(state.selectedConversation.id), { forceStart: true });
     }
   };
@@ -824,9 +989,13 @@ function connectWs() {
 
 function disconnectWs() {
   syncViewingConversation(null);
-  if (state.wsSubscription) {
-    state.wsSubscription.unsubscribe();
-    state.wsSubscription = null;
+  if (state.wsMessageSubscription) {
+    state.wsMessageSubscription.unsubscribe();
+    state.wsMessageSubscription = null;
+  }
+  if (state.wsUnreadSubscription) {
+    state.wsUnreadSubscription.unsubscribe();
+    state.wsUnreadSubscription = null;
   }
   state.stompClient?.deactivate();
   state.stompClient = null;
@@ -840,6 +1009,27 @@ window.addEventListener('beforeunload', () => {
 
 window.addEventListener('pagehide', () => {
   syncViewingConversation(null);
+});
+
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden') {
+    syncViewingConversation(null);
+    return;
+  }
+
+  if (document.visibilityState === 'visible' && state.selectedConversation?.id != null) {
+    syncViewingConversation(Number(state.selectedConversation.id), { forceStart: true });
+  }
+});
+
+window.addEventListener('blur', () => {
+  syncViewingConversation(null);
+});
+
+window.addEventListener('focus', () => {
+  if (document.visibilityState === 'visible' && state.selectedConversation?.id != null) {
+    syncViewingConversation(Number(state.selectedConversation.id), { forceStart: true });
+  }
 });
 
 // =====================================
@@ -882,13 +1072,32 @@ function handleIncomingMessage(payload) {
     scrollToBottom();
     log('✓ Appended realtime message vào cuộc trò chuyện đang mở', 'success');
   } else {
-    targetConv.unreadCount = (targetConv.unreadCount || 0) + 1;
-    log(`🔔 Unread +1 cho conversation ${convId}`, 'info');
+    log(`🔔 Nhận tin mới ở conversation ${convId}, chờ unread sync từ BE`, 'info');
   }
 
   // Re-sort sidebar
   state.conversations.sort((a, b) => b.lastMessageTime - a.lastMessageTime);
   renderConversationList();
+}
+
+function handleConversationUnreadUpdate(payload) {
+  const conversationId = Number(payload?.conversationId);
+  const unreadCount = Number(payload?.unreadCount);
+
+  if (!Number.isFinite(conversationId) || !Number.isFinite(unreadCount)) {
+    log(`⚠️ Payload unread không hợp lệ: ${JSON.stringify(payload).substring(0, 120)}`, 'warn');
+    return;
+  }
+
+  const targetConv = state.conversations.find(c => Number(c.id) === conversationId);
+  if (!targetConv) {
+    log(`ℹ️ Unread update cho conversation ${conversationId} chưa có trong danh sách`, 'ws');
+    return;
+  }
+
+  targetConv.unreadCount = Math.max(0, unreadCount);
+  renderConversationList();
+  log(`📬 Sync unread conversation ${conversationId} = ${targetConv.unreadCount}`, 'ws');
 }
 
 // =====================================

@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import vn.socialmedia.dto.request.MessageCreationRequest;
+import vn.socialmedia.dto.response.MessageResponse;
 import vn.socialmedia.dto.response.ResponseData;
 import vn.socialmedia.service.MessageService;
 
@@ -36,10 +37,10 @@ public class MessageController {
                     """
     )
     @PostMapping()
-    public ResponseData<?> sendMessage(
+    public ResponseData<MessageResponse> sendMessage(
             @Valid @ModelAttribute MessageCreationRequest request) {
         log.info("Request to send message to conversation: {}", request.getConversationId());
-        messageService.createMessage(request);
-        return new ResponseData<>(HttpStatus.CREATED.value(), "Message sent successfully");
+        MessageResponse response = messageService.createMessage(request);
+        return new ResponseData<>(HttpStatus.CREATED.value(), "Message sent successfully", response);
     }
 }

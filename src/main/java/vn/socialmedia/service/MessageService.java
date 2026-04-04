@@ -6,9 +6,11 @@ import vn.socialmedia.dto.response.MessageResponse;
 import java.util.List;
 
 public interface MessageService {
-    void createMessage(MessageCreationRequest request);
+    MessageResponse createMessage(MessageCreationRequest request);
 
     List<MessageResponse> getMessages(Long conversationId);
 
     int countUnreadConversations(long userId);
+
+    void markConversationSeenUpToLatest(String username, Long conversationId);
 }
