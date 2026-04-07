@@ -2,6 +2,7 @@ package vn.socialmedia.model;
 
 import jakarta.persistence.*;
 import lombok.*;
+import vn.socialmedia.enums.FollowStatus;
 
 import java.time.LocalDateTime;
 
@@ -24,6 +25,9 @@ public class Follow {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "followee_id")
     private User followee;
+
+    @Enumerated(EnumType.STRING)
+    private FollowStatus status;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;

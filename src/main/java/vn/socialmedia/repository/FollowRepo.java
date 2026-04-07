@@ -7,6 +7,7 @@ import org.springframework.stereotype.Repository;
 import vn.socialmedia.model.Follow;
 import vn.socialmedia.model.User;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -24,4 +25,20 @@ public interface FollowRepo extends JpaRepository<Follow, Long> {
                         )
             """)
     boolean isFollower(@Param("followeeId") Long followeeId, @Param("followerId") Long followerId);
+
+    @Query("""
+            select f
+            from Follow f
+            join fetch f.follower
+            where f.followee.id = :userId
+            """)
+    List<Follow> findAllByFolloweeIdWithFollower(@Param("userId") Long userId);
+
+    @Query("""
+            select f
+            from Follow f
+            join fetch f.followee
+            where f.follower.id = :userId
+            """)
+    List<Follow> findAllByFollowerIdWithFollowee(@Param("userId") Long userId);
 }

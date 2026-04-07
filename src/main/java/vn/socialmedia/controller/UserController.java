@@ -10,9 +10,15 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import vn.socialmedia.dto.response.CRUDPostResponse;
 import vn.socialmedia.dto.request.UpdateProfileRequest;
+import vn.socialmedia.dto.response.CRUDUserResponse;
+import vn.socialmedia.dto.response.CursorPageResponse;
 import vn.socialmedia.dto.response.ResponseData;
+import vn.socialmedia.service.PostService;
 import vn.socialmedia.service.UserService;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/users")
@@ -22,6 +28,7 @@ import vn.socialmedia.service.UserService;
 public class UserController {
 
     UserService userService;
+    PostService postService;
 
     @PutMapping(value = "/profile") //checked
     public ResponseData<?> updateProfile(@AuthenticationPrincipal UserDetails userDetails,
@@ -44,5 +51,19 @@ public class UserController {
 
         return new ResponseData<>(HttpStatus.OK.value(), "Get profile successfully",
                 userService.getProfile(userDetails.getUsername()));
+    }
+
+    @GetMapping
+    public ResponseData<List<CRUDUserResponse>> getAllUsers() {
+        return new ResponseData<>(HttpStatus.OK.value(), "Get all users successfully", userService.getAllUsers());
+    }
+
+    @GetMapping("/{userId}/posts")
+    public ResponseData<CursorPageResponse<CRUDPostResponse>> getPostsByUser(
+            @PathVariable Long userId,
+            @RequestParam(required = false) String cursor,
+            @RequestParam(defaultValue = "10") int limit) {
+        return new ResponseData<>(HttpStatus.OK.value(), "Get user posts successfully",
+                postService.getPostsByUserWithCursor(userId, cursor, limit));
     }
 }

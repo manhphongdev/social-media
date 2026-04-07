@@ -43,15 +43,18 @@ public class FollowServiceImpl implements FollowService {
         if (Objects.equals(user.getId(), targetId)) {
             throw new BusinessException(ErrorCode.CANNOT_FOLLOW_BY_MYSELF);
         }
+
         // check target user exist
         User targetUser = userRepository.findById(targetId).orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
+
         // check target user block
         boolean isBlock = blockService.isBlock(user, targetUser);
+
         if (isBlock) {
             throw new BusinessException(ErrorCode.CANNOT_FOLLOW_USER);
         }
 
-        boolean isFollowExists = followRepo.existsByFollowerAndFollowee(user, targetUser);
+        boolean isFollowExists = followRepo.existsByFollowerAndFollowee(user, targetUser);//TODO fix race condition
         if (isFollowExists) {
             throw new BusinessException(ErrorCode.USER_FOLLOWED_IN_PASS);
         }
@@ -75,11 +78,10 @@ public class FollowServiceImpl implements FollowService {
 
     @Override
     public List<CRUDUserResponse> getFollowers(Long userId) {
-        User user = getUser();
-
-        return user.getFollowers().stream()
+        return followRepo.findAllByFolloweeIdWithFollower(userId).stream()
                 .map(follow -> CRUDUserResponse.builder()
                         .id(follow.getFollower().getId())
+                        .username(follow.getFollower().getUsername())
                         .name(follow.getFollower().getName())
                         .avatarUrl(follow.getFollower().getAvatar())
                         .build())
@@ -88,11 +90,10 @@ public class FollowServiceImpl implements FollowService {
 
     @Override
     public List<CRUDUserResponse> getFollowees(Long userId) {
-        User user = getUser();
-
-        return user.getFollowers().stream()
+        return followRepo.findAllByFollowerIdWithFollowee(userId).stream()
                 .map(follow -> CRUDUserResponse.builder()
                         .id(follow.getFollowee().getId())
+                        .username(follow.getFollowee().getUsername())
                         .name(follow.getFollowee().getName())
                         .avatarUrl(follow.getFollowee().getAvatar())
                         .build())
@@ -102,10 +103,10 @@ public class FollowServiceImpl implements FollowService {
     @Override
     public void unfollow(Long targetId) {
         User user = getUser();
-        User targerUser = userRepository.findById(targetId).orElseThrow(()
+        User targetUser = userRepository.findById(targetId).orElseThrow(()
                 -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
-        Follow follow = followRepo.getFollowByFollowerAndFollowee(user, targerUser)
+        Follow follow = followRepo.getFollowByFollowerAndFollowee(user, targetUser)
                 .orElseThrow(() -> new BusinessException(ErrorCode.FOLLOWER_NOT_FOUND));
 
         followRepo.delete(follow);

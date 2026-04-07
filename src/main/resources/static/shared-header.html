@@ -3,6 +3,7 @@
   <div class="shared-right">
     <div class="shared-nav">
       <a data-nav="home" href="/test-app.html">Newfeed</a>
+      <a data-nav="users" href="/users.html">Người dùng</a>
       <a data-nav="messages" href="/messages.html">
         Tin nhắn
         <span id="shared-unread-conv-badge" class="shared-unread-conv-badge hidden">0</span>
@@ -19,9 +20,14 @@
           <span>Thông báo</span>
           <button id="shared-notif-mark-all" type="button">Đánh dấu tất cả đã đọc</button>
         </div>
+        <div class="shared-notif-controls">
+          <button id="shared-notif-filter-all" class="shared-notif-pill active" type="button">Tất cả</button>
+          <button id="shared-notif-filter-unread" class="shared-notif-pill" type="button">Chưa đọc</button>
+        </div>
         <div id="shared-notif-list" class="shared-notif-list">
           <div class="shared-notif-empty">Đang tải...</div>
         </div>
+        <button id="shared-notif-load-more" class="shared-notif-load-more hidden" type="button">Tải thêm</button>
       </div>
     </div>
     <div class="shared-auth-actions">

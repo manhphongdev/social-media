@@ -27,4 +27,24 @@ public interface PostRepo extends JpaRepository<Post, Long> {
                         @Param("createdAt") LocalDateTime createdAt,
                         @Param("lastPostId") Long postId,
                         Pageable pageable);
+
+    @Query("""
+            select p from Post p
+            where p.user.id = :userId
+              and (
+                p.privacy = 'PUBLIC'
+                or (:includeFriendsOnly = true and p.privacy = 'FRIENDS_ONLY')
+              )
+              and (
+                :createdAt is null
+                or p.createdAt < :createdAt
+                or (p.createdAt = :createdAt and p.id < :lastPostId)
+              )
+            order by p.createdAt desc, p.id desc
+            """)
+    List<Post> getVisiblePostsByUser(@Param("userId") Long userId,
+                                     @Param("includeFriendsOnly") boolean includeFriendsOnly,
+                                     @Param("createdAt") LocalDateTime createdAt,
+                                     @Param("lastPostId") Long postId,
+                                     Pageable pageable);
 }

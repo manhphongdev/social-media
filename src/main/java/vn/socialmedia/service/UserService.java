@@ -4,6 +4,8 @@ import org.springframework.web.multipart.MultipartFile;
 import vn.socialmedia.dto.request.UpdateProfileRequest;
 import vn.socialmedia.dto.response.CRUDUserResponse;
 
+import java.util.List;
+
 public interface UserService {
 
     void updateProfile(UpdateProfileRequest updateProfileRequest, String username);
@@ -11,5 +13,7 @@ public interface UserService {
     void updateAvatar(String username, MultipartFile avatar);
 
     CRUDUserResponse getProfile(String username);
+
+    List<CRUDUserResponse> getAllUsers();
 
 }

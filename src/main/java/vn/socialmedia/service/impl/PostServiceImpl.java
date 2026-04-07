@@ -23,6 +23,7 @@ import vn.socialmedia.model.PostMedia;
 import vn.socialmedia.model.User;
 import vn.socialmedia.repository.FollowRepo;
 import vn.socialmedia.repository.PostRepo;
+import vn.socialmedia.repository.UserRepository;
 import vn.socialmedia.service.CloudService;
 import vn.socialmedia.service.HashtagService;
 import vn.socialmedia.service.PostService;
@@ -45,6 +46,7 @@ public class PostServiceImpl implements PostService {
     private final HashtagService hashtagService;
     private final CloudService cloudService;
     private final FollowRepo followRepo;
+    private final UserRepository userRepository;
     private final CursorPageHelper cursorPageHelper;
 
     private Map<MediaType, Function<MultipartFile, String>> uploadStrategies;
@@ -164,19 +166,7 @@ public class PostServiceImpl implements PostService {
             posts = posts.subList(0, limit);
         }
 
-        List<CRUDPostResponse> responses = posts
-                .stream()
-                .map(post -> CRUDPostResponse.builder()
-                        .postId(post.getId())
-                        .privacy(post.getPrivacy())
-                        .author(CRUDUserResponse.builder().id(user.getId()).name(user.getName()).avatarUrl(user.getAvatar()).build()) //TODO fix author
-                        .caption(post.getCaption())
-                        .reactionCount(post.getReactions().size())
-                        .commentCount(post.getComments().size())
-                        .mediaUrl(post.getMediaFiles().stream().map(PostMedia::getUrl).toList())
-                        .createdAt(post.getCreatedAt())
-                        .build())
-                .toList();
+        List<CRUDPostResponse> responses = posts.stream().map(this::toPostResponse).toList();
 
         String nextCursor = null;
         if (hasNext) {
@@ -184,6 +174,55 @@ public class PostServiceImpl implements PostService {
             nextCursor = cursorPageHelper.encodeCursor(CursorPageRequest.builder()
                     .lastCreatedAt(lastPost.getCreatedAt())
                     .lastId(lastPost.getId()).build());
+        }
+
+        return CursorPageResponse.<CRUDPostResponse>builder()
+                .content(responses)
+                .nextCursor(nextCursor)
+                .hasNext(hasNext)
+                .build();
+    }
+
+    @Override
+    public CursorPageResponse<CRUDPostResponse> getPostsByUserWithCursor(Long userId, String cursor, int limit) {
+        User viewer = getUser();
+        User owner = userRepository.findById(userId)
+                .orElseThrow(() -> new BusinessException(USER_NOT_FOUND, userId));
+
+        CursorPageRequest request = new CursorPageRequest();
+        if (cursor != null) {
+            request = cursorPageHelper.decodeCursor(cursor);
+        }
+
+        List<Post> posts;
+        if (Objects.equals(viewer.getId(), owner.getId())) {
+            posts = postRepo.getPosts(owner.getId(),
+                    request.getLastCreatedAt(),
+                    request.getLastId(),
+                    PageRequest.of(0, limit + 1));
+        } else {
+            boolean canViewFriendsOnly = followRepo.isFollower(owner.getId(), viewer.getId());
+            posts = postRepo.getVisiblePostsByUser(owner.getId(),
+                    canViewFriendsOnly,
+                    request.getLastCreatedAt(),
+                    request.getLastId(),
+                    PageRequest.of(0, limit + 1));
+        }
+
+        boolean hasNext = posts.size() > limit;
+        if (hasNext) {
+            posts = posts.subList(0, limit);
+        }
+
+        List<CRUDPostResponse> responses = posts.stream().map(this::toPostResponse).toList();
+
+        String nextCursor = null;
+        if (hasNext) {
+            Post lastPost = posts.getLast();
+            nextCursor = cursorPageHelper.encodeCursor(CursorPageRequest.builder()
+                    .lastCreatedAt(lastPost.getCreatedAt())
+                    .lastId(lastPost.getId())
+                    .build());
         }
 
         return CursorPageResponse.<CRUDPostResponse>builder()
@@ -252,6 +291,24 @@ public class PostServiceImpl implements PostService {
             hashtag = hashtag.replace("#", "");
         }
         return hashtag;
+    }
+
+    private CRUDPostResponse toPostResponse(Post post) {
+        return CRUDPostResponse.builder()
+                .postId(post.getId())
+                .privacy(post.getPrivacy())
+                .author(CRUDUserResponse.builder()
+                        .id(post.getUser().getId())
+                        .username(post.getUser().getUsername())
+                        .name(post.getUser().getName())
+                        .avatarUrl(post.getUser().getAvatar())
+                        .build())
+                .caption(post.getCaption())
+                .reactionCount(post.getReactions().size())
+                .commentCount(post.getComments().size())
+                .mediaUrl(post.getMediaFiles().stream().map(PostMedia::getUrl).toList())
+                .createdAt(post.getCreatedAt())
+                .build();
     }
 }
 

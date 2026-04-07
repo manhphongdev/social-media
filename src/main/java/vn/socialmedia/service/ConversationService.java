@@ -1,5 +1,6 @@
 package vn.socialmedia.service;
 
+import vn.socialmedia.dto.request.CreateConversationRequest;
 import vn.socialmedia.dto.response.ConversationResponse;
 import vn.socialmedia.model.Conversation;
 import vn.socialmedia.model.User;
@@ -11,4 +12,8 @@ public interface ConversationService {
     Conversation getOrCreateConversation(User currentUser, User recipientUser);
 
     List<ConversationResponse> getConversations(Long userId, String cursor, int limit);
+
+    ConversationResponse createConversation(CreateConversationRequest request);
+
+    ConversationResponse getConversationById(Long conversationId);
 }

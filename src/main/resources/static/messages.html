@@ -232,6 +232,8 @@ const CHAT_VIEW_PING_INTERVAL_MS = 25000;
 let state = {
   token: null,
   currentUserId: null,
+  pendingConversationId: null,
+  pendingTargetUserId: null,
   conversations: [],
   selectedConversation: null,
   stompClient: null,
@@ -384,31 +386,94 @@ async function loadConversations() {
     const rawList = json.data || [];
     log(`✓ Nhận được ${rawList.length} cuộc trò chuyện`, 'success');
 
-    state.conversations = rawList.map(c => {
-      const partner = (c.participants || []).find(p => p.id !== userId) || c.participants?.[0];
-      const lm = c.lastMessage;
-      return {
-        id: c.id,
-        userId: String(partner?.id ?? c.id),
-        userName: partner?.displayName || 'Không rõ',
-        userAvatar: partner?.avatar ?? null,
-        isOnline: partner?.isOnline ?? false,
-        lastMessage: lm?.message?.trim() || (lm?.mediaUrl ? '📎 Tệp đính kèm' : 'Bắt đầu cuộc trò chuyện'),
-        lastMessageTime: parseApiDate(lm?.createdAt || c.lastMessageAt),
-        messages: [],
-        unreadCount: Number(c.unreadCount ?? 0)
-      };
-    }).sort((a, b) => b.lastMessageTime - a.lastMessageTime);
+    state.conversations = rawList
+      .map(c => toConversationViewModel(c, userId))
+      .sort((a, b) => b.lastMessageTime - a.lastMessageTime);
 
     renderConversationList();
 
     const selectedId = state.selectedConversation?.id;
-    const conversationToSelect = state.conversations.find(c => c.id === selectedId) || state.conversations[0];
+    let conversationToSelect = null;
+
+    if (state.pendingConversationId) {
+      conversationToSelect = state.conversations.find(c => Number(c.id) === Number(state.pendingConversationId)) || null;
+      if (!conversationToSelect) {
+        conversationToSelect = await fetchConversationById(state.pendingConversationId, userId);
+      }
+      state.pendingConversationId = null;
+    }
+
+    if (!conversationToSelect && state.pendingTargetUserId) {
+      conversationToSelect = state.conversations.find(c => Number(c.userId) === Number(state.pendingTargetUserId)) || null;
+      if (!conversationToSelect) {
+        log(`ℹ️ Chưa tìm thấy cuộc trò chuyện với user ${state.pendingTargetUserId}`, 'warn');
+      }
+      state.pendingTargetUserId = null;
+    }
+
+    if (!conversationToSelect) {
+      conversationToSelect = state.conversations.find(c => c.id === selectedId) || state.conversations[0];
+    }
+
     if (conversationToSelect) {
       await selectConversation(conversationToSelect);
     }
   } catch (err) {
     log(`💥 Lỗi tải dữ liệu: ${err.message}`, 'error');
+  }
+}
+
+function toConversationViewModel(c, currentUserId) {
+  const participants = Array.isArray(c?.participants) ? c.participants : [];
+  const peers = participants.filter(p => Number(p?.id) !== Number(currentUserId));
+  const partner = peers[0] || participants[0] || null;
+  const isGroup = peers.length > 1 || (String(c?.type || '').toUpperCase() === 'GROUP');
+  const lm = c?.lastMessage;
+
+  return {
+    id: c?.id,
+    userId: String(partner?.id ?? c?.id),
+    userName: isGroup
+      ? (peers.map(p => p?.displayName).filter(Boolean).slice(0, 3).join(', ') || 'Nhóm chat')
+      : (partner?.displayName || 'Không rõ'),
+    userAvatar: partner?.avatar ?? null,
+    isOnline: isGroup ? false : (partner?.isOnline ?? false),
+    lastMessage: lm?.message?.trim() || (lm?.mediaUrl ? '📎 Tệp đính kèm' : 'Bắt đầu cuộc trò chuyện'),
+    lastMessageTime: parseApiDate(lm?.createdAt || c?.lastMessageAt),
+    messages: [],
+    unreadCount: Number(c?.unreadCount ?? 0)
+  };
+}
+
+async function fetchConversationById(conversationId, userId) {
+  const token = getToken();
+  if (!token || !conversationId) return null;
+
+  const url = `${API}/conversations/${conversationId}`;
+  log(`📡 Fallback GET ${url}`, 'info');
+
+  try {
+    const res = await fetch(url, {
+      headers: { 'Authorization': `Bearer ${token}` },
+      credentials: 'include'
+    });
+    const json = await res.json();
+    if (!res.ok || !json?.data) {
+      log(`⚠️ Không lấy được conversation ${conversationId}`, 'warn');
+      return null;
+    }
+
+    const normalized = toConversationViewModel(json.data, userId);
+    const exists = state.conversations.some(conv => Number(conv.id) === Number(normalized.id));
+    if (!exists) {
+      state.conversations.unshift(normalized);
+      renderConversationList();
+    }
+    log(`✓ Đã nạp conversation ${conversationId} bằng fallback`, 'success');
+    return normalized;
+  } catch (error) {
+    log(`⚠️ Fallback conversation lỗi: ${error.message}`, 'warn');
+    return null;
   }
 }
 
@@ -499,7 +564,7 @@ async function loadMessages(conv) {
     return;
   }
 
-  const requestUrl = `${API}/conversations/${conversationId}/messages?conversationId=${conversationId}`;
+  const requestUrl = `${API}/conversations/${conversationId}/messages`;
   log(`📡 GET ${requestUrl}`, 'info');
   scroll.innerHTML = '<div style="padding:20px;color:var(--text-muted);text-align:center">Đang tải...</div>';
 
@@ -1138,6 +1203,18 @@ function esc(str) {
 // INIT
 // =====================================
 (function init() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const conversationId = Number(urlParams.get('conversationId'));
+  const targetUserId = Number(urlParams.get('targetUserId'));
+  if (Number.isInteger(conversationId) && conversationId > 0) {
+    state.pendingConversationId = conversationId;
+    log(`🎯 Ưu tiên mở conversation ${conversationId}`, 'info');
+  }
+  if (Number.isInteger(targetUserId) && targetUserId > 0) {
+    state.pendingTargetUserId = targetUserId;
+    log(`🎯 Ưu tiên mở hội thoại với user ${targetUserId}`, 'info');
+  }
+
   // Restore token and user from localStorage
   const savedToken = localStorage.getItem('accessToken');
   if (savedToken) {

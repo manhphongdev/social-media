@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SocialApp - Người dùng</title>
+  <link rel="stylesheet" href="/shared-theme.css" />
+  <link rel="stylesheet" href="/shared-header.css" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: "Segoe UI", system-ui, sans-serif; }
+    .page { max-width: 980px; margin: 14px auto 24px; padding: 0 14px 24px; display: grid; gap: 14px; }
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; }
+    .head { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 14px 16px; border-bottom: 1px solid var(--border); }
+    .head-actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+    .head h2 { font-size: 16px; }
+    .muted { color: var(--text-muted); font-size: 13px; }
+    .btn { border: none; cursor: pointer; border-radius: 10px; font-weight: 700; padding: 8px 12px; }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-gray { background: var(--gray-btn); color: #fff; }
+    .btn-danger { background: var(--danger); color: #fff; }
+    .btn:disabled { opacity: .45; cursor: not-allowed; }
+    #users { display: grid; gap: 10px; padding: 14px 16px; }
+    .user-item { display: flex; align-items: center; justify-content: space-between; gap: 12px; border: 1px solid var(--border); border-radius: 12px; padding: 10px; background: var(--surface2); }
+    .user-main { display: flex; align-items: center; gap: 10px; min-width: 0; }
+    .user-select { width: 18px; height: 18px; cursor: pointer; accent-color: var(--accent); }
+    .avatar { width: 42px; height: 42px; border-radius: 999px; background: #cbd5e1; flex-shrink: 0; object-fit: cover; }
+    .avatar-fallback { width: 42px; height: 42px; border-radius: 999px; background: var(--accent); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; }
+    .name { font-weight: 700; }
+    .bio { color: var(--text-muted); font-size: 12px; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 420px; }
+    .actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+    #empty { padding: 22px; text-align: center; color: var(--text-muted); }
+    @media (max-width: 700px) {
+      .user-item { flex-direction: column; align-items: flex-start; }
+      .actions { width: 100%; }
+      .actions .btn { flex: 1; }
+      .bio { max-width: 100%; white-space: normal; }
+      .head-actions { width: 100%; }
+      .head-actions .btn { flex: 1; }
+    }
+  </style>
+</head>
+<body data-page="users">
+  <div id="header-slot"></div>
+  <div class="page">
+    <div class="card">
+      <div class="head">
+        <div>
+          <h2>Danh sách người dùng</h2>
+          <div id="status" class="muted">Đăng nhập để tải danh sách</div>
+        </div>
+        <div class="head-actions">
+          <button id="btn-create-conversation" class="btn btn-gray" type="button" disabled>Tạo conversation</button>
+          <button id="btn-reload" class="btn btn-primary" type="button">Tải lại</button>
+        </div>
+      </div>
+      <div id="users"></div>
+      <div id="empty" class="muted" style="display:none;">Không có người dùng</div>
+    </div>
+  </div>
+
+  <script>
+    const API = 'http://localhost:8888';
+    const state = {
+      token: localStorage.getItem('accessToken'),
+      currentUserId: null,
+      users: [],
+      followingIds: new Set(),
+      selectedUserIds: new Set()
+    };
+
+    function esc(value) {
+      if (!value) return '';
+      return String(value).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    function setStatus(text) {
+      document.getElementById('status').textContent = text;
+    }
+
+    function syncCreateConversationButton() {
+      const button = document.getElementById('btn-create-conversation');
+      button.disabled = state.selectedUserIds.size === 0;
+      button.textContent = state.selectedUserIds.size > 0
+        ? `Tạo conversation (${state.selectedUserIds.size})`
+        : 'Tạo conversation';
+    }
+
+    function getInitial(name) {
+      const normalized = (name || '?').trim();
+      if (!normalized) return '?';
+      return normalized.split(/\s+/).map(part => part[0]).join('').slice(0, 2).toUpperCase();
+    }
+
+    function renderUsers() {
+      const root = document.getElementById('users');
+      const empty = document.getElementById('empty');
+      root.innerHTML = '';
+
+      if (!state.users.length) {
+        empty.style.display = 'block';
+        return;
+      }
+
+      empty.style.display = 'none';
+
+      state.users.forEach(user => {
+        const isSelf = user.id === state.currentUserId;
+        const isFollowing = state.followingIds.has(user.id);
+        const isSelected = state.selectedUserIds.has(user.id);
+
+        const item = document.createElement('div');
+        item.className = 'user-item';
+
+        const avatarHtml = user.avatarUrl
+          ? `<img class="avatar" src="${esc(user.avatarUrl)}" alt="avatar-${user.id}" />`
+          : `<div class="avatar-fallback">${getInitial(user.name || user.username)}</div>`;
+
+        item.innerHTML = `
+          <div class="user-main">
+            <input class="user-select" type="checkbox" data-action="select-user" data-id="${user.id}" ${isSelf ? 'disabled' : ''} ${isSelected ? 'checked' : ''} />
+            ${avatarHtml}
+            <div>
+              <div class="name">${esc(user.name || user.username || ('User #' + user.id))}${isSelf ? ' (Bạn)' : ''}</div>
+              <div class="bio">${esc(user.bio || ('@' + (user.username || 'unknown')))}</div>
+            </div>
+          </div>
+          <div class="actions">
+            <button class="btn btn-gray" data-action="message" data-id="${user.id}" ${isSelf ? 'disabled' : ''}>Nhắn tin</button>
+            <button class="btn btn-primary" data-action="follow" data-id="${user.id}" ${isSelf || isFollowing ? 'disabled' : ''}>Theo dõi</button>
+            <button class="btn btn-danger" data-action="unfollow" data-id="${user.id}" ${isSelf || !isFollowing ? 'disabled' : ''}>Bỏ theo dõi</button>
+          </div>
+        `;
+        root.appendChild(item);
+      });
+
+      syncCreateConversationButton();
+    }
+
+    async function apiCall(path, options = {}) {
+      const headers = options.headers || {};
+      if (state.token) {
+        headers.Authorization = `Bearer ${state.token}`;
+      }
+
+      const res = await fetch(`${API}${path}`, {
+        ...options,
+        headers,
+        credentials: 'include'
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(json?.message || res.statusText || 'Request thất bại');
+      }
+      return json;
+    }
+
+    async function hydrateCurrentUser() {
+      const saved = localStorage.getItem('currentUser');
+      if (saved) {
+        try {
+          const user = JSON.parse(saved);
+          if (user?.id) {
+            state.currentUserId = user.id;
+            return;
+          }
+        } catch (_) {}
+      }
+
+      const profile = await apiCall('/users/profile/me');
+      if (profile?.data?.id) {
+        state.currentUserId = profile.data.id;
+        localStorage.setItem('currentUser', JSON.stringify(profile.data));
+      }
+    }
+
+    async function loadFollowing() {
+      state.followingIds = new Set();
+      if (!state.currentUserId) return;
+
+      try {
+        const json = await apiCall(`/follows/followee/${state.currentUserId}`);
+        const list = Array.isArray(json?.data) ? json.data : [];
+        list.forEach(user => {
+          if (user?.id) {
+            state.followingIds.add(user.id);
+          }
+        });
+      } catch (_) {
+      }
+    }
+
+    async function loadUsers() {
+      if (!state.token) {
+        state.users = [];
+        renderUsers();
+        setStatus('Đăng nhập để tải danh sách');
+        return;
+      }
+
+      setStatus('Đang tải danh sách người dùng...');
+
+      try {
+        await hydrateCurrentUser();
+        await loadFollowing();
+        const json = await apiCall('/users');
+        const list = Array.isArray(json?.data) ? json.data : [];
+        state.users = list.sort((a, b) => Number(a.id || 0) - Number(b.id || 0));
+        const validUserIds = new Set(state.users.map(user => Number(user.id)));
+        state.selectedUserIds = new Set(Array.from(state.selectedUserIds).filter(id => validUserIds.has(id)));
+        renderUsers();
+        setStatus(`Tổng ${state.users.length} người dùng`);
+      } catch (error) {
+        state.users = [];
+        state.selectedUserIds = new Set();
+        renderUsers();
+        setStatus(`Lỗi tải dữ liệu: ${error.message}`);
+      }
+    }
+
+    async function createConversation() {
+      if (!state.token) {
+        alert('Bạn chưa đăng nhập');
+        return;
+      }
+
+      const participantIds = Array.from(state.selectedUserIds);
+      if (!participantIds.length) {
+        alert('Chọn ít nhất 1 người dùng');
+        return;
+      }
+
+      const button = document.getElementById('btn-create-conversation');
+      button.disabled = true;
+
+      try {
+        const json = await apiCall('/conversations', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ participantIds })
+        });
+
+        const conversationId = Number(json?.data?.id);
+        if (!conversationId) {
+          throw new Error('Không nhận được conversationId');
+        }
+
+        window.location.href = `/messages.html?conversationId=${conversationId}`;
+      } catch (error) {
+        alert(error.message || 'Không tạo được conversation');
+        syncCreateConversationButton();
+      }
+    }
+
+    async function handleFollowAction(action, userId) {
+      if (!state.token || !userId) return;
+
+      try {
+        if (action === 'follow') {
+          await apiCall(`/follows/${userId}`, { method: 'POST' });
+          state.followingIds.add(userId);
+        }
+        if (action === 'unfollow') {
+          await apiCall(`/follows/followee/${userId}`, { method: 'DELETE' });
+          state.followingIds.delete(userId);
+        }
+        renderUsers();
+      } catch (error) {
+        alert(error.message || 'Không thể thực hiện thao tác');
+      }
+    }
+
+    document.getElementById('btn-reload').addEventListener('click', loadUsers);
+    document.getElementById('btn-create-conversation').addEventListener('click', createConversation);
+
+    document.getElementById('users').addEventListener('click', async (event) => {
+      const button = event.target.closest('button[data-action]');
+      if (!button) {
+        return;
+      }
+
+      const userId = Number(button.dataset.id);
+      const action = button.dataset.action;
+
+      if (action === 'message') {
+        window.location.href = `/messages.html?targetUserId=${userId}`;
+        return;
+      }
+
+      button.disabled = true;
+      await handleFollowAction(action, userId);
+    });
+
+    document.getElementById('users').addEventListener('change', (event) => {
+      const checkbox = event.target.closest('input[data-action="select-user"]');
+      if (!checkbox) return;
+
+      const userId = Number(checkbox.dataset.id);
+      if (!userId || userId === state.currentUserId) {
+        return;
+      }
+
+      if (checkbox.checked) {
+        state.selectedUserIds.add(userId);
+      } else {
+        state.selectedUserIds.delete(userId);
+      }
+
+      syncCreateConversationButton();
+    });
+
+    window.addEventListener('shared-auth-changed', async (event) => {
+      const detail = event?.detail || {};
+      if (!detail.loggedIn) {
+        state.token = null;
+        state.currentUserId = null;
+        state.followingIds = new Set();
+        state.selectedUserIds = new Set();
+        state.users = [];
+        renderUsers();
+        setStatus('Đăng nhập để tải danh sách');
+        return;
+      }
+
+      state.token = detail.token || localStorage.getItem('accessToken');
+      if (detail.user?.id) {
+        state.currentUserId = detail.user.id;
+      }
+      await loadUsers();
+    });
+
+    loadUsers();
+    syncCreateConversationButton();
+  </script>
+  <script src="/shared-header.js"></script>
+</body>
+</html>

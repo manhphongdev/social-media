@@ -267,6 +267,30 @@
   overflow-y: auto;
 }
 
+.shared-notif-controls {
+  display: flex;
+  gap: 8px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.shared-notif-pill {
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 5px 10px;
+  cursor: pointer;
+}
+
+.shared-notif-pill.active {
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 35%, var(--border));
+  background: #eef2ff;
+}
+
 .shared-notif-item {
   display: flex;
   align-items: flex-start;
@@ -312,6 +336,34 @@
   font-size: 13px;
   line-height: 1.45;
   color: var(--text);
+}
+
+.shared-notif-item-meta {
+  margin-top: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.shared-notif-type {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.shared-notif-mark-btn {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.shared-notif-mark-btn:hover {
+  background: #eef2ff;
 }
 
 .shared-notif-time {

@@ -22,5 +22,7 @@ public interface PostService {
 
     CursorPageResponse<CRUDPostResponse> getPostsWithCursor(String cursor, int limit);
 
+    CursorPageResponse<CRUDPostResponse> getPostsByUserWithCursor(Long userId, String cursor, int limit);
+
     List<CRUDPostResponse> getAllPost();
 }

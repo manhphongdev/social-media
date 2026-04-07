@@ -17,6 +17,8 @@ import vn.socialmedia.repository.UserRepository;
 import vn.socialmedia.service.CloudService;
 import vn.socialmedia.service.UserService;
 
+import java.util.List;
+
 import static vn.socialmedia.common.helpers.FileHelper.validateImage;
 
 @Service
@@ -57,12 +59,26 @@ public class UserServiceImpl implements UserService {
         User user = getUserByUsername(username);
         return CRUDUserResponse.builder()
                 .id(user.getId())
+                .username(user.getUsername())
                 .name(user.getName())
                 .avatarUrl(user.getAvatar())
                 .dateOfBirth(user.getDateOfBirth())
                 .gender(user.getGender())
                 .bio(user.getBio())
                 .build();
+    }
+
+    @Override
+    public List<CRUDUserResponse> getAllUsers() {
+        return userRepository.findAll().stream()
+                .map(user -> CRUDUserResponse.builder()
+                        .id(user.getId())
+                        .username(user.getUsername())
+                        .name(user.getName())
+                        .avatarUrl(user.getAvatar())
+                        .bio(user.getBio())
+                        .build())
+                .toList();
     }
 
     private User getUserByUsername(String username) {
